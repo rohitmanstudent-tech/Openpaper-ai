@@ -3,11 +3,22 @@ FROM node:20-alpine AS builder
 
 WORKDIR /build
 
-COPY package.json tsconfig.json next.config.js postcss.config.js tailwind.config.js ./
-COPY src/ ./src/
-COPY public/ ./public/
+# Copy root workspace config + lockfile (layer caching)
+COPY package.json package-lock.json ./
 
-RUN npm ci && npm run build
+# Copy workspace package.json files (layer caching for npm ci)
+COPY apps/web/package.json apps/web/package.json
+COPY packages/shared/package.json packages/shared/package.json
+
+# Install all workspace dependencies (hoisted to /build/node_modules)
+RUN npm ci
+
+# Copy source code
+COPY apps/web/ ./apps/web/
+COPY packages/shared/ ./packages/shared/
+
+# Build only the web workspace
+RUN npm run build --workspace=apps/web
 
 # ── Production stage ─────────────────────────
 FROM node:20-alpine AS runner
@@ -18,9 +29,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=builder /build/.next ./.next
-COPY --from=builder /build/public ./public
-COPY --from=builder /build/package.json ./package.json
+COPY --from=builder /build/apps/web/.next ./.next
+COPY --from=builder /build/apps/web/public ./public
+COPY --from=builder /build/apps/web/package.json ./package.json
 COPY --from=builder /build/node_modules ./node_modules
 
 USER openpaper

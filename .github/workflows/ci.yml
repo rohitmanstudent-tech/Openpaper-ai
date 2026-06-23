@@ -134,7 +134,8 @@ jobs:
       - name: Build Web image
         uses: docker/build-push-action@v5
         with:
-          context: apps/web
+          context: .
+          file: apps/web/Dockerfile
           tags: ${{ env.IMAGE_NAME }}-web:ci-${{ github.sha }}
           load: true
           cache-from: type=gha

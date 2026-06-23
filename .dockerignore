@@ -1,0 +1,16 @@
+node_modules/
+.next/
+.git/
+.vscode/
+.idea/
+*.tsbuildinfo
+next-env.d.ts
+.env
+.env.local
+*.pyc
+__pycache__/
+.pytest_cache/
+alembic/versions/*.pyc
+.venv/
+dist/
+*.egg-info/
