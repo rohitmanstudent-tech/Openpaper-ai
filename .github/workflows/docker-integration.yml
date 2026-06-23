@@ -30,7 +30,7 @@ jobs:
           driver: docker-container
 
       - name: Build API image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: apps/api
           tags: openpaper-api:ci
@@ -39,7 +39,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build Web image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: apps/web/Dockerfile
