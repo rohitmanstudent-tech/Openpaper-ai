@@ -1,0 +1,35 @@
+title: "Ideas: "
+labels: [ideas]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 💡 Feature Ideas
+
+        Share your ideas for new features, agents, workflows, or integrations.
+
+  - type: textarea
+    attributes:
+      label: Idea
+      description: Describe your idea in detail. What problem does it solve?
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: Category
+      options:
+        - New Agent
+        - New Workflow
+        - New Tool
+        - New Provider
+        - Platform Enhancement
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Implementation sketch (optional)
+      description: Any pseudo-code, API design, or technical notes.

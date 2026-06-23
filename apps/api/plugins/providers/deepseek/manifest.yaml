@@ -1,0 +1,30 @@
+name: deepseek
+version: 1.0.0
+description: "DeepSeek provider — DeepSeek Chat and DeepSeek Reasoner with streaming, cost tracking, and token tracking"
+author: "OpenPaper AI"
+plugin_type: provider
+entrypoint: plugin.py
+dependencies:
+  - httpx>=0.27.0
+permissions:
+  - network
+hooks:
+  - on_load
+  - on_unload
+config_schema:
+  type: object
+  properties:
+    api_key:
+      type: string
+      description: "DeepSeek API key"
+    base_url:
+      type: string
+      description: "DeepSeek API base URL"
+      default: "https://api.deepseek.com"
+    default_model:
+      type: string
+      description: "Default model to use"
+      default: "deepseek-chat"
+      enum:
+        - deepseek-chat
+        - deepseek-reasoner

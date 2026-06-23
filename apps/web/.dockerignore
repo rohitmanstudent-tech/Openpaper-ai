@@ -1,0 +1,10 @@
+# ── Docker ignore for web ───────────────────
+node_modules/
+.next/
+.git/
+.vscode/
+.idea/
+*.tsbuildinfo
+next-env.d.ts
+.env
+.env.local

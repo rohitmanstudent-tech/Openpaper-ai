@@ -1,0 +1,13 @@
+name: test_agent
+version: 2.0.0
+description: A test agent plugin
+author: OpenPaper
+plugin_type: agent
+entrypoint: plugin.py
+dependencies: []
+permissions:
+  - memory:read
+  - task:read
+hooks:
+  - on_agent_start
+  - on_agent_stop

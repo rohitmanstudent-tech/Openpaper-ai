@@ -1,0 +1,18 @@
+{
+  "name": "openpaper-ai",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "api:dev": "cd apps/api && uvicorn app.main:app --reload --port 8000",
+    "lint": "npm run lint --workspace=apps/web",
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

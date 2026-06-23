@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  api:
+    ports:
+      - "0.0.0.0:8000:8000"
+    environment:
+      DEBUG: "false"
+    deploy:
+      replicas: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.openpaper.ai`)"
+
+  web:
+    ports:
+      - "0.0.0.0:3000:3000"
+    deploy:
+      replicas: 2
+
+  traefik:
+    image: traefik:v3.0
+    container_name: openpaper-traefik
+    command:
+      - "--providers.docker=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@openpaper.ai"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "letsencrypt:/letsencrypt"
+    networks:
+      - openpaper-net
+
+volumes:
+  letsencrypt:
+
+networks:
+  openpaper-net:
+    external: true

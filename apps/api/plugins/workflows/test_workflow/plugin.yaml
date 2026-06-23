@@ -1,0 +1,12 @@
+name: test_workflow
+version: 1.0.0
+description: A test workflow plugin
+author: OpenPaper
+plugin_type: workflow
+entrypoint: plugin.py
+dependencies: []
+permissions:
+  - agent:execute
+  - task:write
+hooks:
+  - on_task_completed

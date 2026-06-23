@@ -1,0 +1,4 @@
+# apps/cli has been merged into openpaper_cli/ (the main "openpaper" CLI).
+# All hub commands (search, install, publish, unpublish, login, logout, whoami)
+# are available via the "openpaper" command from the openpaper-cli package.
+# See openpaper_cli/ at the project root.

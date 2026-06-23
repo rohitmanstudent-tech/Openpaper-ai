@@ -1,0 +1,16 @@
+title: "General: "
+labels: [general]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # General Discussion
+
+        Use this for general questions, comments, or conversations about OpenPaper AI.
+
+  - type: textarea
+    attributes:
+      label: Topic
+      description: What would you like to discuss?
+    validations:
+      required: true

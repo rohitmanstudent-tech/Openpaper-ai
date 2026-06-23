@@ -1,0 +1,28 @@
+title: "Show and Tell: "
+labels: [show-and-tell]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 🎉 Show and Tell
+
+        Share what you've built with OpenPaper AI! Agents, workflows, integrations, or custom tooling.
+
+  - type: textarea
+    attributes:
+      label: What did you build?
+      description: Describe your project, agent, workflow, or integration.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Screenshots / GIFs
+      description: Show us what it looks like!
+      placeholder: Drag and drop images here...
+
+  - type: textarea
+    attributes:
+      label: Code / Configuration
+      description: Share relevant snippets (redact secrets)
+      render: yaml

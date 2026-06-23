@@ -1,0 +1,39 @@
+title: "Q&A: "
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # ❓ Questions & Answers
+
+        Ask questions about installation, configuration, usage, or troubleshooting.
+
+  - type: textarea
+    attributes:
+      label: Question
+      description: What would you like help with?
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: Category
+      options:
+        - Installation
+        - Configuration
+        - CLI Usage
+        - API / Backend
+        - Frontend
+        - Agent Behavior
+        - Workflow
+        - Marketplace / Hub
+        - Deployment
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Environment
+      description: OpenPaper version, OS, deployment method
+      placeholder: v1.0.0-rc.1, Ubuntu 24.04, Docker Compose

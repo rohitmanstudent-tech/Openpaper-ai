@@ -1,0 +1,30 @@
+name: grok
+version: 1.0.0
+description: "Grok (xAI) provider — Grok-2 and Grok-2-mini with streaming, cost tracking, and token tracking"
+author: "OpenPaper AI"
+plugin_type: provider
+entrypoint: plugin.py
+dependencies:
+  - httpx>=0.27.0
+permissions:
+  - network
+hooks:
+  - on_load
+  - on_unload
+config_schema:
+  type: object
+  properties:
+    api_key:
+      type: string
+      description: "xAI Grok API key"
+    base_url:
+      type: string
+      description: "xAI API base URL"
+      default: "https://api.x.ai"
+    default_model:
+      type: string
+      description: "Default model to use"
+      default: "grok-2"
+      enum:
+        - grok-2
+        - grok-2-mini

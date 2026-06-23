@@ -1,0 +1,16 @@
+# Default owners for all files
+* @openpaper-ai/core
+
+# Backend ownership
+apps/api/ @openpaper-ai/backend
+
+# Frontend ownership  
+apps/web/ @openpaper-ai/frontend
+
+# Infrastructure & CI/CD
+.github/ @openpaper-ai/devops
+docker-compose*.yml @openpaper-ai/devops
+Dockerfile* @openpaper-ai/devops
+
+# Documentation
+*.md @openpaper-ai/docs
