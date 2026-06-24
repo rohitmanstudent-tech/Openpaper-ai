@@ -13,6 +13,7 @@ concurrency:
 
 env:
   SECRET_KEY: ci-test-secret-key-do-not-use-in-production
+  ENCRYPTION_KEY: 7ddxtizGdsHOWeI871nHOroUWANwVij5VN2NqkiaokM=
   POSTGRES_PASSWORD: openpaper_secret
   COMPOSE_FILE: docker-compose.yml
 
