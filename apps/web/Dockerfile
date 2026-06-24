@@ -1,5 +1,5 @@
 # ── Build stage ──────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:26-alpine AS builder
 
 WORKDIR /build
 
@@ -21,7 +21,7 @@ COPY packages/shared/ ./packages/shared/
 RUN npm run build --workspace=apps/web
 
 # ── Production stage ─────────────────────────
-FROM node:20-alpine AS runner
+FROM node:26-alpine AS runner
 
 RUN addgroup -S openpaper && adduser -S openpaper -G openpaper
 
