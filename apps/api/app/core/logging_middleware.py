@@ -23,6 +23,7 @@ from starlette.types import ASGIApp
 
 try:
     from contextvars import ContextVar
+
     _correlation_id: ContextVar[str] = ContextVar("correlation_id", default="")
     _workflow_id: ContextVar[str] = ContextVar("workflow_id", default="")
     _agent_id: ContextVar[str] = ContextVar("agent_id", default="")
@@ -37,8 +38,12 @@ except ImportError:
 
 
 SANITIZE_HEADERS = {
-    "authorization", "x-api-key", "cookie", "set-cookie",
-    "x-auth-token", "proxy-authorization",
+    "authorization",
+    "x-api-key",
+    "cookie",
+    "set-cookie",
+    "x-auth-token",
+    "proxy-authorization",
 }
 
 SENSITIVE_FIELD_PATTERNS = [
@@ -93,10 +98,7 @@ def sanitize_value(key: str, value: str) -> str:
 
 
 def sanitize_headers(headers: dict[str, str]) -> dict[str, str]:
-    return {
-        k: ("***REDACTED***" if k.lower() in SANITIZE_HEADERS else v)
-        for k, v in headers.items()
-    }
+    return {k: ("***REDACTED***" if k.lower() in SANITIZE_HEADERS else v) for k, v in headers.items()}
 
 
 class JSONLogFormatter(logging.Formatter):

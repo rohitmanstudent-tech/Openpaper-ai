@@ -12,12 +12,14 @@ async def list_providers():
     for name, provider in providers.items():
         health = await provider.check_health()
         models = await provider.list_models()
-        result.append({
-            "name": name,
-            "status": "available" if health else "unavailable",
-            "default_model": provider.default_model,
-            "model_count": len(models),
-        })
+        result.append(
+            {
+                "name": name,
+                "status": "available" if health else "unavailable",
+                "default_model": provider.default_model,
+                "model_count": len(models),
+            }
+        )
     return {"providers": result}
 
 

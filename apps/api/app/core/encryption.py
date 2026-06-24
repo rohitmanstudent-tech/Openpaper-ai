@@ -12,23 +12,22 @@ logger = logging.getLogger(__name__)
 _cipher: Fernet | None = None
 
 
-def _get_or_create_key() -> bytes:
+def _get_or_create_key() -> str:
     settings = get_settings()
     raw = settings.ENCRYPTION_KEY
     if not raw:
-        logger.warning("ENCRYPTION_KEY not set - generating ephemeral key (keys will be lost on restart)")
-        return Fernet.generate_key()
+        raise RuntimeError("ENCRYPTION_KEY must be set in production")
     try:
-        return base64.urlsafe_b64decode(raw)
+        base64.urlsafe_b64decode(raw)
     except Exception:
-        logger.warning("ENCRYPTION_KEY is not valid base64 - generating ephemeral key")
-        return Fernet.generate_key()
+        raise RuntimeError("ENCRYPTION_KEY is not valid base64") from None
+    return raw
 
 
 def init_encryption() -> None:
     global _cipher
     key = _get_or_create_key()
-    _cipher = Fernet(key if isinstance(key, bytes) else key.encode())
+    _cipher = Fernet(key)
 
 
 def encrypt_value(plaintext: str) -> str:

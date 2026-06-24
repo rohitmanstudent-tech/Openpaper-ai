@@ -33,15 +33,14 @@ def _get_orch() -> AgentOrchestrator:
 
 # ── Workflows CRUD ──────────────────────────────────────────────────
 
+
 @router.get("", response_model=list[WorkflowResponse])
 async def list_workflows(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(Workflow)
-        .where(Workflow.owner_id == current_user.id)
-        .order_by(Workflow.updated_at.desc())
+        select(Workflow).where(Workflow.owner_id == current_user.id).order_by(Workflow.updated_at.desc())
     )
     return [WorkflowResponse.model_validate(w) for w in result.scalars().all()]
 
@@ -71,9 +70,7 @@ async def get_workflow(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Workflow).where(Workflow.id == workflow_id, Workflow.owner_id == current_user.id)
-    )
+    result = await db.execute(select(Workflow).where(Workflow.id == workflow_id, Workflow.owner_id == current_user.id))
     wf = result.scalar_one_or_none()
     if not wf:
         raise NotFoundError("Workflow not found")
@@ -87,9 +84,7 @@ async def update_workflow(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Workflow).where(Workflow.id == workflow_id, Workflow.owner_id == current_user.id)
-    )
+    result = await db.execute(select(Workflow).where(Workflow.id == workflow_id, Workflow.owner_id == current_user.id))
     wf = result.scalar_one_or_none()
     if not wf:
         raise NotFoundError("Workflow not found")
@@ -109,9 +104,7 @@ async def delete_workflow(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Workflow).where(Workflow.id == workflow_id, Workflow.owner_id == current_user.id)
-    )
+    result = await db.execute(select(Workflow).where(Workflow.id == workflow_id, Workflow.owner_id == current_user.id))
     wf = result.scalar_one_or_none()
     if not wf:
         raise NotFoundError("Workflow not found")
@@ -121,6 +114,7 @@ async def delete_workflow(
 
 # ── Execution ───────────────────────────────────────────────────────
 
+
 @router.post("/{workflow_id}/execute", response_model=WorkflowRunResponse)
 async def execute_workflow_endpoint(
     workflow_id: int,
@@ -128,9 +122,7 @@ async def execute_workflow_endpoint(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Workflow).where(Workflow.id == workflow_id, Workflow.owner_id == current_user.id)
-    )
+    result = await db.execute(select(Workflow).where(Workflow.id == workflow_id, Workflow.owner_id == current_user.id))
     wf = result.scalar_one_or_none()
     if not wf:
         raise NotFoundError("Workflow not found")
@@ -157,6 +149,7 @@ async def execute_workflow_endpoint(
 
 
 # ── Runs ────────────────────────────────────────────────────────────
+
 
 @router.get("/{workflow_id}/runs", response_model=list[WorkflowRunResponse])
 async def list_runs(

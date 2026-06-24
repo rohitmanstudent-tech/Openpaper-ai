@@ -4,6 +4,7 @@ Revision ID: 003_workflows
 Revises: 002_refresh_tokens
 Create Date: 2024-01-03 00:00:00.000000
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -22,7 +23,12 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("status", sa.Enum("draft", "active", "archived", name="workflowstatus"), nullable=False, server_default="draft"),
+        sa.Column(
+            "status",
+            sa.Enum("draft", "active", "archived", name="workflowstatus"),
+            nullable=False,
+            server_default="draft",
+        ),
         sa.Column("nodes", sa.JSON(), nullable=False, server_default="[]"),
         sa.Column("edges", sa.JSON(), nullable=False, server_default="[]"),
         sa.Column("owner_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
@@ -37,7 +43,12 @@ def upgrade() -> None:
         "workflow_runs",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("workflow_id", sa.Integer(), sa.ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("status", sa.Enum("pending", "running", "completed", "failed", "cancelled", name="runstatus"), nullable=False, server_default="pending"),
+        sa.Column(
+            "status",
+            sa.Enum("pending", "running", "completed", "failed", "cancelled", name="runstatus"),
+            nullable=False,
+            server_default="pending",
+        ),
         sa.Column("trigger", sa.String(50), nullable=False, server_default="manual"),
         sa.Column("input_data", sa.JSON(), nullable=False, server_default="{}"),
         sa.Column("output_data", sa.JSON(), nullable=True),

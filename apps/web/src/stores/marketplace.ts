@@ -61,7 +61,21 @@ interface MarketplaceState {
   setSearchQuery: (query: string) => void
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+function getApiBase(): string {
+  const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  return base.replace(/\/api\/v1\/?$/, '')
+}
+
+function authHeaders(): Record<string, string> {
+  const token: string | null = typeof window !== 'undefined'
+    ? (JSON.parse(localStorage.getItem('opencode-auth-store') || '{}')?.state?.token ?? null)
+    : null
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  return headers
+}
+
+const API_BASE = getApiBase()
 
 export const useMarketplaceStore = create<MarketplaceState>()(
   persist(
@@ -86,6 +100,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           if (params?.recentlyAdded) query.set('recently_added', 'true')
 
           const res = await fetch(`${API_BASE}/api/v1/marketplace?${query.toString()}`, {
+            headers: authHeaders(),
             credentials: 'include',
           })
           if (!res.ok) throw new Error('Failed to fetch marketplace items')
@@ -104,6 +119,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       fetchInstalled: async () => {
         try {
           const res = await fetch(`${API_BASE}/api/v1/marketplace/installed/list`, {
+            headers: authHeaders(),
             credentials: 'include',
           })
           if (!res.ok) throw new Error('Failed to fetch installed items')
@@ -119,7 +135,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         try {
           const res = await fetch(`${API_BASE}/api/v1/marketplace/install`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             credentials: 'include',
             body: JSON.stringify({ item_id: itemId }),
           })
@@ -139,7 +155,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         try {
           const res = await fetch(`${API_BASE}/api/v1/marketplace/${itemId}/uninstall`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             credentials: 'include',
           })
           if (!res.ok) {
@@ -158,7 +174,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         try {
           const res = await fetch(`${API_BASE}/api/v1/marketplace/${itemId}/update`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             credentials: 'include',
           })
           if (!res.ok) {
@@ -176,6 +192,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         try {
           const res = await fetch(`${API_BASE}/api/v1/hub/sync`, {
             method: 'POST',
+            headers: authHeaders(),
             credentials: 'include',
           })
           if (!res.ok) throw new Error('Sync failed')
@@ -192,6 +209,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       getSyncStatus: async () => {
         try {
           const res = await fetch(`${API_BASE}/api/v1/hub/sync/status`, {
+            headers: authHeaders(),
             credentials: 'include',
           })
           if (!res.ok) throw new Error('Failed to fetch sync status')

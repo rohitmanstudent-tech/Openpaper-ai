@@ -21,9 +21,7 @@ async def list_chats(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Chat).where(Chat.user_id == current_user.id).order_by(Chat.updated_at.desc())
-    )
+    result = await db.execute(select(Chat).where(Chat.user_id == current_user.id).order_by(Chat.updated_at.desc()))
     return [ChatResponse.model_validate(c) for c in result.scalars().all()]
 
 
@@ -50,9 +48,7 @@ async def get_chat(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Chat).where(Chat.id == chat_id, Chat.user_id == current_user.id)
-    )
+    result = await db.execute(select(Chat).where(Chat.id == chat_id, Chat.user_id == current_user.id))
     chat = result.scalar_one_or_none()
     if not chat:
         raise NotFoundError("Chat not found")
@@ -72,9 +68,7 @@ async def send_message(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Chat).where(Chat.id == chat_id, Chat.user_id == current_user.id)
-    )
+    result = await db.execute(select(Chat).where(Chat.id == chat_id, Chat.user_id == current_user.id))
     chat = result.scalar_one_or_none()
     if not chat:
         raise NotFoundError("Chat not found")
@@ -92,9 +86,7 @@ async def chat_completion(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Chat).where(Chat.id == chat_id, Chat.user_id == current_user.id)
-    )
+    result = await db.execute(select(Chat).where(Chat.id == chat_id, Chat.user_id == current_user.id))
     chat = result.scalar_one_or_none()
     if not chat:
         raise NotFoundError("Chat not found")
@@ -123,6 +115,7 @@ async def chat_completion(
         raise ProviderError(f"Provider '{provider_name}' is not available")
 
     if data.stream:
+
         async def generate():
             full_content = ""
             async for chunk in provider.chat_stream(messages, model=model):

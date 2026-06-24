@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.orchestrator import AgentOrchestrator
 from app.core.exceptions import NotFoundError, ProviderError, ValidationError
+from app.core.input_sanitizer import PromptInjectionError, sanitize_chat_input
 from app.core.security import get_current_user
 from app.database import get_db
 from app.models import User
@@ -23,9 +24,7 @@ async def list_agents(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Agent).where(Agent.owner_id == current_user.id).order_by(Agent.created_at.desc())
-    )
+    result = await db.execute(select(Agent).where(Agent.owner_id == current_user.id).order_by(Agent.created_at.desc()))
     return [AgentResponse.model_validate(a) for a in result.scalars().all()]
 
 
@@ -57,9 +56,7 @@ async def get_agent(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Agent).where(Agent.id == agent_id, Agent.owner_id == current_user.id)
-    )
+    result = await db.execute(select(Agent).where(Agent.id == agent_id, Agent.owner_id == current_user.id))
     agent = result.scalar_one_or_none()
     if not agent:
         raise NotFoundError("Agent not found")
@@ -73,9 +70,7 @@ async def update_agent(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Agent).where(Agent.id == agent_id, Agent.owner_id == current_user.id)
-    )
+    result = await db.execute(select(Agent).where(Agent.id == agent_id, Agent.owner_id == current_user.id))
     agent = result.scalar_one_or_none()
     if not agent:
         raise NotFoundError("Agent not found")
@@ -93,9 +88,7 @@ async def delete_agent(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Agent).where(Agent.id == agent_id, Agent.owner_id == current_user.id)
-    )
+    result = await db.execute(select(Agent).where(Agent.id == agent_id, Agent.owner_id == current_user.id))
     agent = result.scalar_one_or_none()
     if not agent:
         raise NotFoundError("Agent not found")
@@ -110,9 +103,7 @@ async def execute_agent(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Agent).where(Agent.id == agent_id, Agent.owner_id == current_user.id)
-    )
+    result = await db.execute(select(Agent).where(Agent.id == agent_id, Agent.owner_id == current_user.id))
     agent = result.scalar_one_or_none()
     if not agent:
         raise NotFoundError("Agent not found")
@@ -120,6 +111,10 @@ async def execute_agent(
     user_input = body.get("input", "")
     if not user_input:
         raise ValidationError("input is required")
+    try:
+        user_input = sanitize_chat_input(user_input)
+    except PromptInjectionError:
+        raise ValidationError("Input blocked: potential prompt injection detected") from None
 
     stream = body.get("stream", False)
     context = body.get("context")
@@ -139,6 +134,7 @@ async def execute_agent(
         agent_type = AgentType(agent.agent_type)
 
         if stream:
+
             async def generate():
                 full_content = ""
                 async for chunk in orchestrator.process_stream(
@@ -176,7 +172,7 @@ async def execute_agent(
         task.status = "failed"
         task.result = str(e)
         await db.commit()
-        raise ProviderError(f"Agent execution failed: {e}")
+        raise ProviderError(f"Agent execution failed: {e}") from e
 
 
 @router.post("/{agent_id}/delegate")
@@ -186,9 +182,7 @@ async def delegate_agent_task(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Agent).where(Agent.id == agent_id, Agent.owner_id == current_user.id)
-    )
+    result = await db.execute(select(Agent).where(Agent.id == agent_id, Agent.owner_id == current_user.id))
     agent = result.scalar_one_or_none()
     if not agent:
         raise NotFoundError("Agent not found")
@@ -229,4 +223,4 @@ async def delegate_agent_task(
         task.status = "failed"
         task.result = str(e)
         await db.commit()
-        raise ProviderError(f"Delegation failed: {e}")
+        raise ProviderError(f"Delegation failed: {e}") from e

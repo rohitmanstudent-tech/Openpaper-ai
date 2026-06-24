@@ -62,6 +62,7 @@ async def test_health_legacy_endpoint(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_health_live_response_time(client: AsyncClient):
     import time
+
     start = time.monotonic()
     for _ in range(10):
         await client.get("/api/v1/health/live")
@@ -73,6 +74,7 @@ async def test_health_live_response_time(client: AsyncClient):
 async def test_health_ready_uptime_increasing(client: AsyncClient):
     resp1 = await client.get("/api/v1/health/ready")
     import asyncio
+
     await asyncio.sleep(0.1)
     resp2 = await client.get("/api/v1/health/ready")
     u1 = resp1.json()["uptime_seconds"]

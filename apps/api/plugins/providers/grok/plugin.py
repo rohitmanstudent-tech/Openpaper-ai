@@ -21,6 +21,7 @@ class GrokPlugin(ProviderPlugin):
         if self._provider is None:
             from app.config import get_settings
             from app.providers.grok import GrokProvider
+
             settings = get_settings()
             self._provider = GrokProvider(
                 api_key=settings.GROK_API_KEY or "",

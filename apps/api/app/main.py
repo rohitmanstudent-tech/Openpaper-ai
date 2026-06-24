@@ -30,6 +30,7 @@ from app.core.encryption import init_encryption
 from app.core.error_middleware import ExceptionMiddleware, RequestIDMiddleware
 from app.core.event_bus import get_bus
 from app.core.health import mark_startup
+from app.core.logging_middleware import LoggingMiddleware, setup_json_logging
 from app.core.plugin_registry import get_plugin_registry
 from app.core.rate_limiter import RateLimitMiddleware
 from app.core.security_middleware import SecurityHeadersMiddleware
@@ -42,8 +43,6 @@ from app.providers import register_providers
 settings = get_settings()
 
 # ── Structured JSON Logging ─────────────────
-from app.core.logging_middleware import LoggingMiddleware, setup_json_logging
-
 setup_json_logging(settings.LOG_LEVEL)
 logger = logging.getLogger("openpaper")
 
@@ -71,6 +70,7 @@ app = FastAPI(
     version=settings.VERSION,
     lifespan=lifespan,
 )
+
 
 async def starlette_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
@@ -133,4 +133,5 @@ app.include_router(hub_registry_router, tags=["hub"])
 @app.get("/api/health")
 async def health():
     from app.core.health import liveness
+
     return await liveness()

@@ -70,7 +70,13 @@ class TestNimProvider:
 
     @patch("app.providers.nim.NimProvider.gpu_info", new_callable=PropertyMock)
     def test_local_mode_no_gpu_no_key(self, mock_gpu):
-        mock_gpu.return_value = {"available": False, "gpu_name": "", "is_rtx": False, "cuda_version": "", "vram_gb": 0.0}
+        mock_gpu.return_value = {
+            "available": False,
+            "gpu_name": "",
+            "is_rtx": False,
+            "cuda_version": "",
+            "vram_gb": 0.0,
+        }
         provider = NimProvider()
         provider.api_key = ""
         assert provider.using_cloud is False
@@ -78,7 +84,13 @@ class TestNimProvider:
 
     @patch("app.providers.nim.NimProvider.gpu_info", new_callable=PropertyMock)
     def test_cloud_fallback_with_key(self, mock_gpu):
-        mock_gpu.return_value = {"available": False, "gpu_name": "", "is_rtx": False, "cuda_version": "", "vram_gb": 0.0}
+        mock_gpu.return_value = {
+            "available": False,
+            "gpu_name": "",
+            "is_rtx": False,
+            "cuda_version": "",
+            "vram_gb": 0.0,
+        }
         provider = NimProvider()
         provider.api_key = "test-key"
         provider._detect_and_configure()
@@ -87,7 +99,13 @@ class TestNimProvider:
 
     @patch("app.providers.nim.NimProvider.gpu_info", new_callable=PropertyMock)
     def test_rtx_optimization(self, mock_gpu):
-        mock_gpu.return_value = {"available": True, "gpu_name": "NVIDIA RTX 4090", "is_rtx": True, "cuda_version": "8.9", "vram_gb": 24.0}
+        mock_gpu.return_value = {
+            "available": True,
+            "gpu_name": "NVIDIA RTX 4090",
+            "is_rtx": True,
+            "cuda_version": "8.9",
+            "vram_gb": 24.0,
+        }
         provider = NimProvider()
         provider.api_key = ""
         assert provider.using_cloud is False
@@ -144,12 +162,24 @@ class TestNimProvider:
         assert config == {}
 
     def test_list_models_rtx(self, nim):
-        nim._gpu_info = {"available": True, "gpu_name": "RTX 4090", "is_rtx": True, "cuda_version": "8.9", "vram_gb": 24.0}
+        nim._gpu_info = {
+            "available": True,
+            "gpu_name": "RTX 4090",
+            "is_rtx": True,
+            "cuda_version": "8.9",
+            "vram_gb": 24.0,
+        }
         models = nim._list_local_models()
         assert models == RTX_OPTIMIZED_MODELS
 
     def test_list_models_low_vram(self, nim):
-        nim._gpu_info = {"available": True, "gpu_name": "RTX 3060", "is_rtx": True, "cuda_version": "8.6", "vram_gb": 8.0}
+        nim._gpu_info = {
+            "available": True,
+            "gpu_name": "RTX 3060",
+            "is_rtx": True,
+            "cuda_version": "8.6",
+            "vram_gb": 8.0,
+        }
         models = nim._list_local_models()
         assert models == ["meta/llama-3.1-8b-instruct", "mistralai/mistral-7b-instruct-v0.3"]
 
@@ -165,6 +195,7 @@ class TestNimProvider:
 
     def test_check_health_no_local(self, nim):
         import asyncio
+
         result = asyncio.run(nim.check_health())
         assert result is False
 
@@ -174,10 +205,12 @@ class TestNimProviderMocked:
     async def test_chat_success(self, mock_client, nim):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json = MagicMock(return_value={
-            "choices": [{"message": {"content": "Hello from NIM!"}}],
-            "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
-        })
+        mock_response.json = MagicMock(
+            return_value={
+                "choices": [{"message": {"content": "Hello from NIM!"}}],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
+            }
+        )
         mock_client.return_value.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
 
         result = await nim.chat([{"role": "user", "content": "Hi"}])
@@ -188,7 +221,7 @@ class TestNimProviderMocked:
         lines = [
             'data: {"choices":[{"delta":{"content":"Hello"},"index":0}]}',
             'data: {"choices":[{"delta":{"content":" from NIM"},"index":0}]}',
-            'data: [DONE]',
+            "data: [DONE]",
         ]
 
         async def mock_aiter_lines():
@@ -271,12 +304,14 @@ class TestNimProviderMocked:
         nim.base_url = CLOUD_NIM_BASE_URL
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json = MagicMock(return_value={
-            "data": [
-                {"id": "nvidia/nemotron-4-340b-instruct"},
-                {"id": "meta/llama-3.1-8b-instruct"},
-            ]
-        })
+        mock_response.json = MagicMock(
+            return_value={
+                "data": [
+                    {"id": "nvidia/nemotron-4-340b-instruct"},
+                    {"id": "meta/llama-3.1-8b-instruct"},
+                ]
+            }
+        )
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         models = await nim.list_models()
@@ -288,7 +323,7 @@ class TestNimProviderMocked:
         lines = [
             'data: {"choices":[{"delta":{"content":"Hi"},"index":0}]}',
             'data: {"choices":[{"delta":{},"index":0}],"usage":{"prompt_tokens":5,"completion_tokens":3,"total_tokens":8}}',
-            'data: [DONE]',
+            "data: [DONE]",
         ]
 
         async def mock_aiter_lines():

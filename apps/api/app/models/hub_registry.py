@@ -46,10 +46,16 @@ class RegistryPackage(Base):
     repository: Mapped[str] = mapped_column(String(500), nullable=True)
     readme: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
-    versions = relationship("RegistryPackageVersion", back_populates="package", cascade="all, delete-orphan",
-                            order_by="RegistryPackageVersion.created_at.desc()")
+    versions = relationship(
+        "RegistryPackageVersion",
+        back_populates="package",
+        cascade="all, delete-orphan",
+        order_by="RegistryPackageVersion.created_at.desc()",
+    )
     ratings = relationship("RegistryRating", back_populates="package", cascade="all, delete-orphan")
 
     @property

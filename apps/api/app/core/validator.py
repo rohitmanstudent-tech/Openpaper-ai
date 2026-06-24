@@ -3,6 +3,7 @@
 Raises EnvironmentError with clear instructions on missing or misconfigured
 environment variables — fails fast instead of failing mysteriously at runtime.
 """
+
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -49,7 +50,7 @@ def check_secret_key() -> ValidationResult:
         r.add_error(
             "SECRET_KEY is still set to the default value. "
             "Generate a secure random key:\n"
-            "  python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+            '  python -c "import secrets; print(secrets.token_urlsafe(32))"'
         )
     return r
 

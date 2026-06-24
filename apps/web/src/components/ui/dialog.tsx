@@ -3,17 +3,28 @@ import { cn } from "@/lib/utils"
 import { X } from "lucide-react"
 
 function Dialog({ open, onOpenChange, children }: { open: boolean; onOpenChange: (v: boolean) => void; children: React.ReactNode }) {
-  if (!open) return null
+  const childrenArray = React.Children.toArray(children)
+  const trigger = childrenArray.find(
+    (c) => React.isValidElement(c) && (c as React.ReactElement).type === DialogTrigger
+  )
+  const content = childrenArray.filter(
+    (c) => !(React.isValidElement(c) && (c as React.ReactElement).type === DialogTrigger)
+  )
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={() => onOpenChange(false)} />
-      <div className="relative z-50 w-full max-w-lg rounded-xl border border-border bg-card shadow-lg">
-        <button onClick={() => onOpenChange(false)} className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100">
-          <X className="h-4 w-4" />
-        </button>
-        {children}
-      </div>
-    </div>
+    <>
+      {trigger}
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={() => onOpenChange(false)} />
+          <div className="relative z-50 w-full max-w-lg rounded-xl border border-border bg-card shadow-lg">
+            <button onClick={() => onOpenChange(false)} className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100">
+              <X className="h-4 w-4" />
+            </button>
+            {content}
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 

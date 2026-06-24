@@ -4,6 +4,7 @@ Revision ID: 001_initial
 Revises:
 Create Date: 2024-01-01 00:00:00.000000
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -38,7 +39,11 @@ def upgrade() -> None:
         "agents",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(255), nullable=False),
-        sa.Column("agent_type", sa.Enum("ceo", "sales", "research", "buyer_finder", "operations", name="agenttype"), nullable=False),
+        sa.Column(
+            "agent_type",
+            sa.Enum("ceo", "sales", "research", "buyer_finder", "operations", name="agenttype"),
+            nullable=False,
+        ),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("status", sa.Enum("idle", "working", "paused", "error", name="agentstatus"), nullable=False),
         sa.Column("model", sa.String(255), server_default="llama3.1", nullable=False),
@@ -81,7 +86,11 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("title", sa.String(255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("status", sa.Enum("pending", "in_progress", "completed", "failed", "cancelled", name="taskstatus"), nullable=False),
+        sa.Column(
+            "status",
+            sa.Enum("pending", "in_progress", "completed", "failed", "cancelled", name="taskstatus"),
+            nullable=False,
+        ),
         sa.Column("priority", sa.Enum("low", "medium", "high", "critical", name="taskpriority"), nullable=False),
         sa.Column("assigned_to", sa.Integer(), sa.ForeignKey("users.id"), nullable=True),
         sa.Column("assigned_agent", sa.Integer(), sa.ForeignKey("agents.id"), nullable=True),

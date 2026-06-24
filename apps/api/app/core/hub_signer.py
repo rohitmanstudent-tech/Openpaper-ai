@@ -36,15 +36,13 @@ def compute_checksum(manifest: dict[str, Any]) -> str:
 
 def _canonical_json(obj: Any) -> str:
     import json
+
     return json.dumps(obj, sort_keys=True, separators=(",", ":"))
 
 
 def generate_key_pair() -> dict[str, str]:
     if not _HAS_NACL:
-        raise RuntimeError(
-            "PyNaCl is required for key generation. "
-            "Install with: pip install pynacl"
-        )
+        raise RuntimeError("PyNaCl is required for key generation. Install with: pip install pynacl")
     signing_key = SigningKey.generate()
     verify_key = signing_key.verify_key
     return {
@@ -56,10 +54,7 @@ def generate_key_pair() -> dict[str, str]:
 
 def sign_manifest(manifest: dict[str, Any], private_key_hex: str) -> str:
     if not _HAS_NACL:
-        raise RuntimeError(
-            "PyNaCl is required for signing. "
-            "Install with: pip install pynacl"
-        )
+        raise RuntimeError("PyNaCl is required for signing. Install with: pip install pynacl")
     signing_key = SigningKey(private_key_hex, encoder=HexEncoder)
     canonical = _canonical_json(manifest)
     signed = signing_key.sign(canonical.encode("utf-8"), encoder=HexEncoder)
@@ -72,8 +67,8 @@ def verify_signature(
     public_key_hex: str,
 ) -> bool:
     if not _HAS_NACL:
-        logger.warning("PyNaCl not available — skipping signature verification")
-        return True
+        logger.warning("PyNaCl not available — signature verification skipped")
+        return False
     try:
         verify_key = VerifyKey(public_key_hex, encoder=HexEncoder)
         canonical = _canonical_json(manifest)

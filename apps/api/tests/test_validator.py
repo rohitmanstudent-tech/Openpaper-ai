@@ -11,6 +11,7 @@ from app.core.validator import (
 class TestSecretKey:
     def test_empty_key(self):
         from app.config import get_settings
+
         s = get_settings()
         original = s.SECRET_KEY
         s.SECRET_KEY = ""
@@ -30,6 +31,7 @@ class TestSecretKey:
 class TestDatabaseUrl:
     def test_localhost_warning(self):
         from app.config import get_settings
+
         s = get_settings()
         original = s.DATABASE_URL
         s.DATABASE_URL = "postgresql+asyncpg://user:pass@localhost:5432/db"
@@ -41,6 +43,7 @@ class TestDatabaseUrl:
 
     def test_empty_url(self):
         from app.config import get_settings
+
         s = get_settings()
         original = s.DATABASE_URL
         s.DATABASE_URL = ""
@@ -54,6 +57,7 @@ class TestDatabaseUrl:
 class TestDebugMode:
     def test_debug_warning(self):
         from app.config import get_settings
+
         s = get_settings()
         original = s.DEBUG
         s.DEBUG = True
@@ -67,6 +71,7 @@ class TestDebugMode:
 class TestProviders:
     def test_no_keys_warning(self):
         from app.config import get_settings
+
         s = get_settings()
         orig_openai = s.OPENAI_API_KEY
         orig_anthropic = s.ANTHROPIC_API_KEY

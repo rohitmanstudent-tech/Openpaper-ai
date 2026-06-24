@@ -51,6 +51,7 @@ def capture_error(exc: BaseException, request_id: str | None = None) -> None:
         return
     try:
         import sentry_sdk
+
         with sentry_sdk.push_scope() as scope:
             if request_id:
                 scope.set_tag("request_id", request_id)

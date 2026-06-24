@@ -43,31 +43,40 @@ class GeminiProvider(BaseProvider):
         self._usage: list[dict] = []
 
     def _headers(self) -> dict:
-        return {"Content-Type": "application/json"}
+        return {
+            "Content-Type": "application/json",
+            "x-goog-api-key": self.api_key,
+        }
 
     def _url(self, model: str, stream: bool = False) -> str:
         endpoint = "streamGenerateContent" if stream else "generateContent"
-        return f"{self.base_url}/models/{model}:{endpoint}?key={self.api_key}"
+        return f"{self.base_url}/models/{model}:{endpoint}"
 
     def _format_messages(self, messages: list[dict]) -> list[dict]:
         contents = []
         for msg in messages:
             role = msg.get("role", "user")
             if role == "system":
-                contents.append({
-                    "role": "user",
-                    "parts": [{"text": f"[System instruction]: {msg['content']}"}],
-                })
+                contents.append(
+                    {
+                        "role": "user",
+                        "parts": [{"text": f"[System instruction]: {msg['content']}"}],
+                    }
+                )
             elif role == "assistant":
-                contents.append({
-                    "role": "model",
-                    "parts": [{"text": msg["content"]}],
-                })
+                contents.append(
+                    {
+                        "role": "model",
+                        "parts": [{"text": msg["content"]}],
+                    }
+                )
             else:
-                contents.append({
-                    "role": "user",
-                    "parts": [{"text": msg["content"]}],
-                })
+                contents.append(
+                    {
+                        "role": "user",
+                        "parts": [{"text": msg["content"]}],
+                    }
+                )
         return contents
 
     async def chat(self, messages: list[dict], model: str | None = None, **kwargs) -> str:
@@ -100,10 +109,15 @@ class GeminiProvider(BaseProvider):
         }
         total_input = 0
         total_output = 0
-        async with httpx.AsyncClient(timeout=300) as client, client.stream(
-            "POST", self._url(model_name, stream=True),
-            headers=self._headers(), json=body,
-        ) as resp:
+        async with (
+            httpx.AsyncClient(timeout=300) as client,
+            client.stream(
+                "POST",
+                self._url(model_name, stream=True),
+                headers=self._headers(),
+                json=body,
+            ) as resp,
+        ):
             if resp.status_code == 403:
                 raise RuntimeError("Gemini API key is invalid or missing")
             if resp.status_code == 429:
@@ -127,10 +141,13 @@ class GeminiProvider(BaseProvider):
                 except (json.JSONDecodeError, IndexError, KeyError):
                     continue
         if total_input or total_output:
-            self._record_usage(model_name, {
-                "promptTokenCount": total_input,
-                "candidatesTokenCount": total_output,
-            })
+            self._record_usage(
+                model_name,
+                {
+                    "promptTokenCount": total_input,
+                    "candidatesTokenCount": total_output,
+                },
+            )
 
     async def check_health(self) -> bool:
         try:
@@ -184,16 +201,22 @@ class GeminiProvider(BaseProvider):
         candidates_tokens = usage.get("candidatesTokenCount", 0)
         total_tokens = usage.get("totalTokenCount", prompt_tokens + candidates_tokens)
         cost = self.estimate_cost(model, prompt_tokens, candidates_tokens)
-        self._usage.append({
-            "model": model,
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": candidates_tokens,
-            "total_tokens": total_tokens,
-            "cost": cost,
-        })
+        self._usage.append(
+            {
+                "model": model,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": candidates_tokens,
+                "total_tokens": total_tokens,
+                "cost": cost,
+            }
+        )
         logger.debug(
             "Gemini usage: model=%s prompt=%d candidates=%d total=%d cost=$%.6f",
-            model, prompt_tokens, candidates_tokens, total_tokens, cost,
+            model,
+            prompt_tokens,
+            candidates_tokens,
+            total_tokens,
+            cost,
         )
 
     def get_usage(self) -> list[dict]:

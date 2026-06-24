@@ -74,7 +74,8 @@ class TestGeminiProvider:
         url = gemini._url("gemini-2.5-flash", stream=False)
         assert "gemini-2.5-flash" in url
         assert "generateContent" in url
-        assert "test-key" in url
+        headers = gemini._headers()
+        assert headers["x-goog-api-key"] == "test-key"
 
         stream_url = gemini._url("gemini-2.5-pro", stream=True)
         assert "gemini-2.5-pro" in stream_url
@@ -83,6 +84,7 @@ class TestGeminiProvider:
     def test_list_models_fallback(self, gemini):
         gemini.api_key = ""
         import asyncio
+
         models = asyncio.run(gemini.list_models())
         assert "gemini-2.5-pro" in models
         assert "gemini-2.5-flash" in models
@@ -90,6 +92,7 @@ class TestGeminiProvider:
     def test_check_health_no_key(self, gemini):
         gemini.api_key = ""
         import asyncio
+
         result = asyncio.run(gemini.check_health())
         assert result is False
 
@@ -99,18 +102,16 @@ class TestGeminiProviderMocked:
     async def test_chat_success(self, mock_client, gemini):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json = MagicMock(return_value={
-            "candidates": [{
-                "content": {
-                    "parts": [{"text": "Hello! How can I help you?"}]
-                }
-            }],
-            "usageMetadata": {
-                "promptTokenCount": 10,
-                "candidatesTokenCount": 20,
-                "totalTokenCount": 30,
+        mock_response.json = MagicMock(
+            return_value={
+                "candidates": [{"content": {"parts": [{"text": "Hello! How can I help you?"}]}}],
+                "usageMetadata": {
+                    "promptTokenCount": 10,
+                    "candidatesTokenCount": 20,
+                    "totalTokenCount": 30,
+                },
             }
-        })
+        )
         mock_client.return_value.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
 
         result = await gemini.chat([{"role": "user", "content": "Hi"}])
@@ -182,13 +183,15 @@ class TestGeminiProviderMocked:
     async def test_list_models_success(self, mock_client, gemini):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json = MagicMock(return_value={
-            "models": [
-                {"name": "models/gemini-2.5-flash"},
-                {"name": "models/gemini-2.5-pro"},
-                {"name": "models/gemini-1.5-pro"},
-            ]
-        })
+        mock_response.json = MagicMock(
+            return_value={
+                "models": [
+                    {"name": "models/gemini-2.5-flash"},
+                    {"name": "models/gemini-2.5-pro"},
+                    {"name": "models/gemini-1.5-pro"},
+                ]
+            }
+        )
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         models = await gemini.list_models()

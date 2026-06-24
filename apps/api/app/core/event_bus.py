@@ -12,7 +12,15 @@ from typing import Any
 from app.core.redis import redis_client
 from app.core.vector import scroll as vector_scroll
 from app.core.vector import upsert_point
-from app.models.events import AgentMessage, EventPayload, EventType, TaskEvent, now_iso
+from app.models.events import (
+    DIRECTION_MAP,
+    AgentMessage,
+    AgentMessageDirection,
+    EventPayload,
+    EventType,
+    TaskEvent,
+    now_iso,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -250,8 +258,6 @@ def set_bus(bus: EventBus | None) -> None:
 
 
 # ── Agent Communication Protocol ────────────────────────────────────────────
-
-from app.models.events import DIRECTION_MAP, AgentMessageDirection
 
 
 def build_agent_message(

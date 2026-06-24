@@ -21,6 +21,7 @@ class DeepSeekPlugin(ProviderPlugin):
         if self._provider is None:
             from app.config import get_settings
             from app.providers.deepseek import DeepSeekProvider
+
             settings = get_settings()
             self._provider = DeepSeekProvider(
                 api_key=settings.DEEPSEEK_API_KEY or "",

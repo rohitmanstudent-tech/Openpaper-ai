@@ -24,8 +24,20 @@ PROMPT_INJECTION_PATTERNS: list[re.Pattern] = [
 ]
 
 ALLOWED_FILE_EXTENSIONS = {
-    ".txt", ".md", ".csv", ".json", ".yaml", ".yml",
-    ".pdf", ".docx", ".xlsx", ".png", ".jpg", ".jpeg", ".gif", ".svg",
+    ".txt",
+    ".md",
+    ".csv",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".pdf",
+    ".docx",
+    ".xlsx",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".svg",
 }
 MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 
@@ -41,11 +53,17 @@ def contains_prompt_injection(text: str) -> bool:
     return any(pattern.search(text) for pattern in PROMPT_INJECTION_PATTERNS)
 
 
-def sanitize_chat_input(text: str) -> str:
+class PromptInjectionError(ValueError):
+    pass
+
+
+def sanitize_chat_input(text: str, strict: bool = True) -> str:
     """Sanitize chat/agent input: strip control chars, detect injection."""
     cleaned = sanitize_string(text)
     if contains_prompt_injection(cleaned):
         logger.warning("Prompt injection detected in input: %.100s", cleaned)
+        if strict:
+            raise PromptInjectionError("Potential prompt injection detected")
     return cleaned
 
 
@@ -57,7 +75,7 @@ def validate_file_upload(filename: str, content: bytes) -> dict[str, Any]:
     if ext not in ALLOWED_FILE_EXTENSIONS:
         return {"valid": False, "reason": f"File extension '{ext}' is not allowed"}
     if len(content) > MAX_FILE_SIZE_BYTES:
-        return {"valid": False, "reason": f"File exceeds {MAX_FILE_SIZE_BYTES // (1024*1024)} MB limit"}
+        return {"valid": False, "reason": f"File exceeds {MAX_FILE_SIZE_BYTES // (1024 * 1024)} MB limit"}
     return {"valid": True}
 
 

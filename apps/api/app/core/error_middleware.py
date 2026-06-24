@@ -65,6 +65,22 @@ async def app_exception_handler(request: Request, exc: Exception) -> JSONRespons
     """Kept for backward compatibility — delegates to ExceptionMiddleware logic."""
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
     if isinstance(exc, AppError):
-        return JSONResponse(status_code=exc.status_code, content={...})
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "success": False,
+                "error_code": exc.__class__.__name__,
+                "message": str(exc),
+                "request_id": request_id,
+            },
+        )
     traceback.print_exc(file=sys.stderr)
-    return JSONResponse(status_code=500, content={"success": False, "error_code": "INTERNAL_ERROR", "message": "An unexpected error occurred", "request_id": request_id})
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "error_code": "INTERNAL_ERROR",
+            "message": "An unexpected error occurred",
+            "request_id": request_id,
+        },
+    )

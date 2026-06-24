@@ -40,6 +40,7 @@ EVENTS_PAYLOAD_INDEXES = [
 
 # ── Initialization ───────────────────────────────────────────────────────
 
+
 def get_client() -> QdrantClient:
     global _client
     if _client is None:
@@ -101,6 +102,7 @@ async def close_vector_store() -> None:
 
 # ── CRUD Operations ─────────────────────────────────────────────────────
 
+
 async def upsert_point(
     collection: str,
     point_id: str,
@@ -157,6 +159,7 @@ async def count_points(collection: str) -> int:
 
 
 # ── Search ────────────────────────────────────────────────────────────────
+
 
 async def search(
     collection: str,
@@ -223,6 +226,7 @@ async def scroll(
 
 # ── Collection Management ────────────────────────────────────────────────
 
+
 async def list_collections() -> list[str]:
     client = get_client()
     collections = client.get_collections().collections
@@ -272,6 +276,7 @@ async def vector_store_health() -> dict[str, Any]:
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
+
 def _build_filter(filters: dict[str, Any]) -> qmodels.Filter:
     """Convert a flat dict of {field: value} into a Qdrant Filter.
 
@@ -290,7 +295,9 @@ def _build_filter(filters: dict[str, Any]) -> qmodels.Filter:
                 elif op == "$lte":
                     must_conditions.append(qmodels.FieldCondition(key=field, range=qmodels.Range(lte=v)))
                 elif op == "$ne":
-                    must_conditions.append(qmodels.FieldCondition(key=field, match=qmodels.MatchExcept(**{"except": [v]})))
+                    must_conditions.append(
+                        qmodels.FieldCondition(key=field, match=qmodels.MatchExcept(**{"except": [v]}))
+                    )
                 elif op == "$in":
                     must_conditions.append(qmodels.FieldCondition(key=field, match=qmodels.MatchAny(any=v)))
         else:

@@ -13,22 +13,18 @@ class EmbeddingProvider(abc.ABC):
     """Abstract embedding provider."""
 
     @abc.abstractmethod
-    async def embed(self, text: str) -> list[float]:
-        ...
+    async def embed(self, text: str) -> list[float]: ...
 
     @abc.abstractmethod
-    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        ...
+    async def embed_batch(self, texts: list[str]) -> list[list[float]]: ...
 
     @property
     @abc.abstractmethod
-    def dimension(self) -> int:
-        ...
+    def dimension(self) -> int: ...
 
     @property
     @abc.abstractmethod
-    def name(self) -> str:
-        ...
+    def name(self) -> str: ...
 
 
 class OllamaEmbeddingProvider(EmbeddingProvider):
@@ -53,6 +49,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
 
     async def embed(self, text: str) -> list[float]:
         import httpx
+
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
                 f"{self.base_url}/api/embeddings",
@@ -72,7 +69,9 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
 class OpenAIEmbeddingProvider(EmbeddingProvider):
     """Uses OpenAI's text-embedding-3-small or text-embedding-3-large."""
 
-    def __init__(self, api_key: str, model: str = "text-embedding-3-small", base_url: str = "https://api.openai.com/v1"):
+    def __init__(
+        self, api_key: str, model: str = "text-embedding-3-small", base_url: str = "https://api.openai.com/v1"
+    ):
         self.api_key = api_key
         self._model = model
         self.base_url = base_url.rstrip("/")
@@ -88,6 +87,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
     async def embed(self, text: str) -> list[float]:
         import httpx
+
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
                 f"{self.base_url}/embeddings",
@@ -100,6 +100,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
         import httpx
+
         async with httpx.AsyncClient(timeout=60) as client:
             resp = await client.post(
                 f"{self.base_url}/embeddings",
@@ -119,6 +120,7 @@ def get_embedding_provider() -> EmbeddingProvider:
     global _embedding_provider
     if _embedding_provider is None:
         from app.config import get_settings
+
         s = get_settings()
         if s.OPENAI_API_KEY:
             _embedding_provider = OpenAIEmbeddingProvider(api_key=s.OPENAI_API_KEY)

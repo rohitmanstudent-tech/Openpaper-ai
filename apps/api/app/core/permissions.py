@@ -21,4 +21,5 @@ def require_permission(permission: str):
         if current_user.role not in allowed_roles:
             raise PermissionDeniedError(f"Missing permission: {permission}")
         return current_user
+
     return checker

@@ -78,6 +78,7 @@ services:
       DEBUG: "false"
       DATABASE_URL: postgresql+asyncpg://openpaper:${POSTGRES_PASSWORD:-openpaper_secret}@postgres:5432/openpaper
       REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
       SECRET_KEY: ${SECRET_KEY}
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
@@ -97,10 +98,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      qdrant:
+        condition: service_healthy
     networks:
       - openpaper-net
     healthcheck:
-      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/api/health', timeout=5).raise_for_status()"]
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/api/v1/health/live', timeout=5).raise_for_status()"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -113,11 +116,35 @@ services:
           memory: 512M
     logging: *default-logging
 
+  qdrant:
+    <<: *restart-policy
+    image: qdrant/qdrant:latest
+    container_name: openpaper-qdrant
+    ports:
+      - "127.0.0.1:6333:6333"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    networks:
+      - openpaper-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:6333/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    logging: *default-logging
+
   web:
     <<: *restart-policy
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/web/Dockerfile
     container_name: openpaper-web
     ports:
       - "127.0.0.1:3000:3000"
@@ -126,6 +153,8 @@ services:
       NEXT_PUBLIC_API_URL: /api/v1
     depends_on:
       api:
+        condition: service_healthy
+      qdrant:
         condition: service_healthy
     networks:
       - openpaper-net
@@ -147,6 +176,8 @@ volumes:
   pgdata:
     driver: local
   redisdata:
+    driver: local
+  qdrant_storage:
     driver: local
 
 networks:

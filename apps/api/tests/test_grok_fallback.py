@@ -47,7 +47,7 @@ class TestUsageTracking:
         p = GrokProvider()
         p._record_usage("grok-2", {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2})
         total = p.get_total_usage()
-        assert total["cost"] == pytest.approx((1/1000*0.002) + (1/1000*0.01))
+        assert total["cost"] == pytest.approx((1 / 1000 * 0.002) + (1 / 1000 * 0.01))
 
     def test_usage_empty_record(self):
         p = GrokProvider()
@@ -96,34 +96,48 @@ class TestGrokFallback:
 
     def test_grok_uses_chat_with_fallback(self):
         from app.providers import chat_with_fallback
+
         register_providers()
         grok = get_provider("grok")
         grok.api_key = "test-key"
         with patch.object(grok, "chat", new=AsyncMock(return_value="grok response")):
             import asyncio
-            result = asyncio.run(chat_with_fallback(
-                messages=[{"role": "user", "content": "hi"}],
-                provider="grok",
-                model="grok-2",
-            ))
+
+            result = asyncio.run(
+                chat_with_fallback(
+                    messages=[{"role": "user", "content": "hi"}],
+                    provider="grok",
+                    model="grok-2",
+                )
+            )
             assert result == "grok response"
 
     def test_grok_fallback_chain_used_on_failure(self):
         from app.providers import chat_with_fallback
+
         register_providers()
         grok = get_provider("grok")
         openai = get_provider("openai")
         grok.api_key = "test-key"
         with (
-            patch.object(grok, "chat", new=AsyncMock(side_effect=httpx.HTTPStatusError("503", request=MagicMock(), response=MagicMock(status_code=503)))),
+            patch.object(
+                grok,
+                "chat",
+                new=AsyncMock(
+                    side_effect=httpx.HTTPStatusError("503", request=MagicMock(), response=MagicMock(status_code=503))
+                ),
+            ),
             patch.object(openai, "chat", new=AsyncMock(return_value="openai fallback")),
         ):
             import asyncio
-            result = asyncio.run(chat_with_fallback(
-                messages=[{"role": "user", "content": "hi"}],
-                provider="grok",
-                model="grok-2",
-            ))
+
+            result = asyncio.run(
+                chat_with_fallback(
+                    messages=[{"role": "user", "content": "hi"}],
+                    provider="grok",
+                    model="grok-2",
+                )
+            )
             assert result == "openai fallback"
 
 
@@ -177,8 +191,10 @@ class TestProviderManager:
 
     def test_usage_stats_empty_provider(self):
         from app.providers.ollama import OllamaProvider
+
         class NoUsageProvider(OllamaProvider):
             pass
+
         NoUsageProvider()
         stats = self.mgr.get_usage_stats()
         assert "ollama" in stats
@@ -222,11 +238,13 @@ class TestProviderManager:
 
     def test_list_all_models(self):
         import asyncio
+
         all_models = asyncio.run(self.mgr.list_all_models())
         assert isinstance(all_models, dict)
 
     def test_list_models_for(self):
         import asyncio
+
         models = asyncio.run(self.mgr.list_models_for("grok"))
         assert isinstance(models, list)
 
@@ -259,7 +277,7 @@ class TestGrokPlugin:
             with open(os.path.join(provider_dir, "plugin.yaml"), "w") as f:
                 yaml.dump(manifest, f)
 
-            plugin_code = '''import logging
+            plugin_code = """import logging
 from typing import AsyncIterator
 from app.core.plugin_base import ProviderPlugin
 
@@ -286,7 +304,7 @@ class GrokPlugin(ProviderPlugin):
 
     async def list_models(self):
         return ["grok-2", "grok-2-mini"]
-'''
+"""
             with open(os.path.join(provider_dir, "plugin.py"), "w") as f:
                 f.write(plugin_code)
 
@@ -314,6 +332,7 @@ class GrokPlugin(ProviderPlugin):
         plugin = registry.get_plugin("grok")
         assert plugin is not None
         import asyncio
+
         result = asyncio.run(plugin.chat([{"role": "user", "content": "hi"}]))
         assert result == "grok plugin response"
 
@@ -324,6 +343,7 @@ class GrokPlugin(ProviderPlugin):
         plugin = registry.get_plugin("grok")
         assert plugin is not None
         import asyncio
+
         result = asyncio.run(plugin.check_health())
         assert result is True
 
@@ -334,6 +354,7 @@ class GrokPlugin(ProviderPlugin):
         plugin = registry.get_plugin("grok")
         assert plugin is not None
         import asyncio
+
         models = asyncio.run(plugin.list_models())
         assert "grok-2" in models
         assert "grok-2-mini" in models
@@ -354,6 +375,7 @@ class GrokPlugin(ProviderPlugin):
         sandbox = registry.get_sandbox("grok")
         assert sandbox is not None
         from app.models.plugin import PluginPermission
+
         assert sandbox.check_permission(PluginPermission.NETWORK) is True
 
     def test_unload_grok_plugin(self, plugin_dir):
@@ -370,9 +392,12 @@ class GrokPlugin(ProviderPlugin):
         registry.discover_and_load()
         plugin = registry.get_plugin("grok")
         import asyncio
+
         chunks = []
+
         async def collect():
             async for chunk in plugin.chat_stream([{"role": "user", "content": "hi"}]):
                 chunks.append(chunk)
+
         asyncio.run(collect())
         assert "".join(chunks) == "chunk1 chunk2"

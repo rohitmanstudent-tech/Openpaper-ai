@@ -54,8 +54,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Strict-Transport-Security"] = self._hsts
             response.headers["Content-Security-Policy"] = self._csp
             response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-            response.headers["Permissions-Policy"] = (
-                "camera=(), microphone=(), geolocation=(), interest-cohort=()"
-            )
+            response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
 
         return response

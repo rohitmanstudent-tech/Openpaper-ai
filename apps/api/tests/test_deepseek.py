@@ -55,8 +55,11 @@ class TestDeepSeekProvider:
 
     def test_build_config(self, deepseek):
         config = deepseek._build_config(
-            temperature=0.7, max_tokens=4096, top_p=0.9,
-            frequency_penalty=0.5, presence_penalty=0.3,
+            temperature=0.7,
+            max_tokens=4096,
+            top_p=0.9,
+            frequency_penalty=0.5,
+            presence_penalty=0.3,
         )
         assert config["temperature"] == 0.7
         assert config["max_tokens"] == 4096
@@ -71,6 +74,7 @@ class TestDeepSeekProvider:
     def test_list_models_fallback(self, deepseek):
         deepseek.api_key = ""
         import asyncio
+
         models = asyncio.run(deepseek.list_models())
         assert "deepseek-chat" in models
         assert "deepseek-reasoner" in models
@@ -78,6 +82,7 @@ class TestDeepSeekProvider:
     def test_check_health_no_key(self, deepseek):
         deepseek.api_key = ""
         import asyncio
+
         result = asyncio.run(deepseek.check_health())
         assert result is False
 
@@ -87,16 +92,16 @@ class TestDeepSeekProviderMocked:
     async def test_chat_success(self, mock_client, deepseek):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json = MagicMock(return_value={
-            "choices": [{
-                "message": {"content": "Hello! How can I help you?"}
-            }],
-            "usage": {
-                "prompt_tokens": 10,
-                "completion_tokens": 20,
-                "total_tokens": 30,
+        mock_response.json = MagicMock(
+            return_value={
+                "choices": [{"message": {"content": "Hello! How can I help you?"}}],
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 20,
+                    "total_tokens": 30,
+                },
             }
-        })
+        )
         mock_client.return_value.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
 
         result = await deepseek.chat([{"role": "user", "content": "Hi"}])
@@ -107,7 +112,7 @@ class TestDeepSeekProviderMocked:
         lines = [
             'data: {"choices":[{"delta":{"content":"Hello"},"index":0}]}',
             'data: {"choices":[{"delta":{"content":" world"},"index":0}]}',
-            'data: [DONE]',
+            "data: [DONE]",
         ]
 
         async def mock_aiter_lines():
@@ -136,7 +141,7 @@ class TestDeepSeekProviderMocked:
         lines = [
             'data: {"choices":[{"delta":{"content":"Hi"},"index":0}]}',
             'data: {"choices":[{"delta":{},"index":0}],"usage":{"prompt_tokens":5,"completion_tokens":3,"total_tokens":8}}',
-            'data: [DONE]',
+            "data: [DONE]",
         ]
 
         async def mock_aiter_lines():
@@ -218,12 +223,14 @@ class TestDeepSeekProviderMocked:
     async def test_list_models_success(self, mock_client, deepseek):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json = MagicMock(return_value={
-            "data": [
-                {"id": "deepseek-chat"},
-                {"id": "deepseek-reasoner"},
-            ]
-        })
+        mock_response.json = MagicMock(
+            return_value={
+                "data": [
+                    {"id": "deepseek-chat"},
+                    {"id": "deepseek-reasoner"},
+                ]
+            }
+        )
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         models = await deepseek.list_models()
@@ -234,12 +241,14 @@ class TestDeepSeekProviderMocked:
     async def test_list_models_no_deepseek_models(self, mock_client, deepseek):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json = MagicMock(return_value={
-            "data": [
-                {"id": "gpt-4"},
-                {"id": "claude-3"},
-            ]
-        })
+        mock_response.json = MagicMock(
+            return_value={
+                "data": [
+                    {"id": "gpt-4"},
+                    {"id": "claude-3"},
+                ]
+            }
+        )
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         models = await deepseek.list_models()

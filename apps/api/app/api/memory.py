@@ -136,6 +136,7 @@ async def count_memories(
 ):
     engine = get_memory_engine()
     from app.models.memory import MemoryType
+
     mt = MemoryType(memory_type) if memory_type else None
     count = await engine.count(agent_id=agent_id, memory_type=mt)
     return {"success": True, "count": count}

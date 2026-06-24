@@ -54,7 +54,7 @@ def get_providers() -> dict[str, BaseProvider]:
 def get_available_providers() -> dict[str, BaseProvider]:
     result = {}
     for k, v in _registry.items():
-        if hasattr(v, 'api_key') and v.api_key or not hasattr(v, 'api_key'):
+        if hasattr(v, "api_key") and v.api_key or not hasattr(v, "api_key"):
             result[k] = v
     return result
 
@@ -77,7 +77,16 @@ def _is_fallthrough_error(e: Exception) -> bool:
     if isinstance(e, httpx.ConnectError):
         return True
     msg = str(e).lower()
-    fallthrough_keywords = ["timeout", "unavailable", "connection", "refused", "resolve", "eof", "bad gateway", "service unavailable"]
+    fallthrough_keywords = [
+        "timeout",
+        "unavailable",
+        "connection",
+        "refused",
+        "resolve",
+        "eof",
+        "bad gateway",
+        "service unavailable",
+    ]
     return any(kw in msg for kw in fallthrough_keywords)
 
 
@@ -100,7 +109,12 @@ async def chat_with_fallback(
             return await prov.chat(messages, model=model, **kwargs)
         except Exception as e:
             if attempt < len(chain) - 1 and _is_fallthrough_error(e):
-                logger.warning("Provider '%s' failed (%s), falling back to '%s'", name, e, chain[attempt + 1] if attempt + 1 < len(chain) else "none")
+                logger.warning(
+                    "Provider '%s' failed (%s), falling back to '%s'",
+                    name,
+                    e,
+                    chain[attempt + 1] if attempt + 1 < len(chain) else "none",
+                )
                 continue
             raise
     raise RuntimeError(f"No available provider in chain: {chain}")
@@ -127,7 +141,12 @@ async def chat_stream_with_fallback(
             return
         except Exception as e:
             if attempt < len(chain) - 1 and _is_fallthrough_error(e):
-                logger.warning("Stream provider '%s' failed (%s), falling back to '%s'", name, e, chain[attempt + 1] if attempt + 1 < len(chain) else "none")
+                logger.warning(
+                    "Stream provider '%s' failed (%s), falling back to '%s'",
+                    name,
+                    e,
+                    chain[attempt + 1] if attempt + 1 < len(chain) else "none",
+                )
                 continue
             raise
     raise RuntimeError(f"No available provider in chain: {chain}")

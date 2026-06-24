@@ -55,8 +55,11 @@ class TestGrokProvider:
 
     def test_build_config(self, grok):
         config = grok._build_config(
-            temperature=0.8, max_tokens=2048, top_p=0.95,
-            frequency_penalty=0.2, presence_penalty=0.1,
+            temperature=0.8,
+            max_tokens=2048,
+            top_p=0.95,
+            frequency_penalty=0.2,
+            presence_penalty=0.1,
         )
         assert config["temperature"] == 0.8
         assert config["max_tokens"] == 2048
@@ -71,6 +74,7 @@ class TestGrokProvider:
     def test_list_models_fallback(self, grok):
         grok.api_key = ""
         import asyncio
+
         models = asyncio.run(grok.list_models())
         assert "grok-2" in models
         assert "grok-2-mini" in models
@@ -78,6 +82,7 @@ class TestGrokProvider:
     def test_check_health_no_key(self, grok):
         grok.api_key = ""
         import asyncio
+
         result = asyncio.run(grok.check_health())
         assert result is False
 
@@ -87,16 +92,16 @@ class TestGrokProviderMocked:
     async def test_chat_success(self, mock_client, grok):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json = MagicMock(return_value={
-            "choices": [{
-                "message": {"content": "Hello from Grok!"}
-            }],
-            "usage": {
-                "prompt_tokens": 10,
-                "completion_tokens": 20,
-                "total_tokens": 30,
+        mock_response.json = MagicMock(
+            return_value={
+                "choices": [{"message": {"content": "Hello from Grok!"}}],
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 20,
+                    "total_tokens": 30,
+                },
             }
-        })
+        )
         mock_client.return_value.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
 
         result = await grok.chat([{"role": "user", "content": "Hi"}])
@@ -107,7 +112,7 @@ class TestGrokProviderMocked:
         lines = [
             'data: {"choices":[{"delta":{"content":"Hello"},"index":0}]}',
             'data: {"choices":[{"delta":{"content":" from Grok"},"index":0}]}',
-            'data: [DONE]',
+            "data: [DONE]",
         ]
 
         async def mock_aiter_lines():
@@ -136,7 +141,7 @@ class TestGrokProviderMocked:
         lines = [
             'data: {"choices":[{"delta":{"content":"Hi"},"index":0}]}',
             'data: {"choices":[{"delta":{},"index":0}],"usage":{"prompt_tokens":5,"completion_tokens":3,"total_tokens":8}}',
-            'data: [DONE]',
+            "data: [DONE]",
         ]
 
         async def mock_aiter_lines():
@@ -218,13 +223,15 @@ class TestGrokProviderMocked:
     async def test_list_models_success(self, mock_client, grok):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json = MagicMock(return_value={
-            "data": [
-                {"id": "grok-2"},
-                {"id": "grok-2-mini"},
-                {"id": "grok-vision-beta"},
-            ]
-        })
+        mock_response.json = MagicMock(
+            return_value={
+                "data": [
+                    {"id": "grok-2"},
+                    {"id": "grok-2-mini"},
+                    {"id": "grok-vision-beta"},
+                ]
+            }
+        )
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         models = await grok.list_models()
@@ -236,13 +243,15 @@ class TestGrokProviderMocked:
     async def test_list_models_filters_non_grok(self, mock_client, grok):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json = MagicMock(return_value={
-            "data": [
-                {"id": "grok-2"},
-                {"id": "gpt-4"},
-                {"id": "claude-3"},
-            ]
-        })
+        mock_response.json = MagicMock(
+            return_value={
+                "data": [
+                    {"id": "grok-2"},
+                    {"id": "gpt-4"},
+                    {"id": "claude-3"},
+                ]
+            }
+        )
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
         models = await grok.list_models()

@@ -64,16 +64,19 @@ class AnthropicProvider(BaseProvider):
         if system:
             body["system"] = system
 
-        async with httpx.AsyncClient(timeout=300) as client, client.stream(
-            "POST",
-            f"{self.base_url}/messages",
-            headers={
-                "x-api-key": self.api_key,
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json",
-            },
-            json=body,
-        ) as resp:
+        async with (
+            httpx.AsyncClient(timeout=300) as client,
+            client.stream(
+                "POST",
+                f"{self.base_url}/messages",
+                headers={
+                    "x-api-key": self.api_key,
+                    "anthropic-version": "2023-06-01",
+                    "Content-Type": "application/json",
+                },
+                json=body,
+            ) as resp,
+        ):
             resp.raise_for_status()
             async for line in resp.aiter_lines():
                 if line.startswith("data: "):

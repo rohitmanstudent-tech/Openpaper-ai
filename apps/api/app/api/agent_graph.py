@@ -76,12 +76,14 @@ async def get_graph_state(
         src = d.get("source_agent", "")
         tgt = d.get("target_agent", "")
         if src and tgt:
-            edges.append({
-                "source": f"agent_{src}",
-                "target": f"agent_{tgt}",
-                "event_type": d.get("event_type"),
-                "correlation_id": d.get("correlation_id"),
-            })
+            edges.append(
+                {
+                    "source": f"agent_{src}",
+                    "target": f"agent_{tgt}",
+                    "event_type": d.get("event_type"),
+                    "correlation_id": d.get("correlation_id"),
+                }
+            )
 
     return {
         "nodes": agent_nodes,
@@ -134,10 +136,7 @@ async def get_delegations(
 ):
     bus = get_bus()
     events = await bus.get_history(limit=limit)
-    delegations = [
-        e for e in events
-        if e.get("event_type") in ("agent_delegated", "message_sent", "task_assigned")
-    ]
+    delegations = [e for e in events if e.get("event_type") in ("agent_delegated", "message_sent", "task_assigned")]
     return {"delegations": delegations}
 
 
@@ -152,13 +151,15 @@ async def get_memory_links(
         memories = []
         for r in results:
             p = r.get("payload", {})
-            memories.append({
-                "id": r["id"],
-                "agent_id": p.get("agent_id"),
-                "memory_type": p.get("memory_type"),
-                "content": p.get("content", "")[:100],
-                "importance_score": p.get("importance_score", 0.5),
-            })
+            memories.append(
+                {
+                    "id": r["id"],
+                    "agent_id": p.get("agent_id"),
+                    "memory_type": p.get("memory_type"),
+                    "content": p.get("content", "")[:100],
+                    "importance_score": p.get("importance_score", 0.5),
+                }
+            )
     except Exception:
         count = 0
         memories = []

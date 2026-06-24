@@ -105,12 +105,14 @@ async def execute_workflow(
 
         if skip:
             skipped.add(nid)
-            logs.append({
-                "node_id": nid,
-                "node_type": ntype,
-                "status": "skipped",
-                "timestamp": datetime.now(UTC).isoformat(),
-            })
+            logs.append(
+                {
+                    "node_id": nid,
+                    "node_type": ntype,
+                    "status": "skipped",
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+            )
             continue
 
         log_entry: dict[str, Any] = {
@@ -174,6 +176,7 @@ async def execute_workflow(
                 headers = ndata.get("headers", {})
                 body = ndata.get("body")
                 import httpx
+
                 async with httpx.AsyncClient(timeout=30) as client:
                     resp = await client.request(method, url, headers=headers, json=body)
                     result = {"status": resp.status_code, "body": resp.text[:5000]}

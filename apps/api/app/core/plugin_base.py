@@ -73,16 +73,13 @@ class ProviderPlugin(BasePlugin):
     plugin_type = PluginType.PROVIDER
 
     @abc.abstractmethod
-    async def chat(self, messages: list[dict], model: str | None = None, **kwargs) -> str:
-        ...
+    async def chat(self, messages: list[dict], model: str | None = None, **kwargs) -> str: ...
 
     @abc.abstractmethod
-    async def chat_stream(self, messages: list[dict], model: str | None = None, **kwargs) -> Any:
-        ...
+    async def chat_stream(self, messages: list[dict], model: str | None = None, **kwargs) -> Any: ...
 
     @abc.abstractmethod
-    async def check_health(self) -> bool:
-        ...
+    async def check_health(self) -> bool: ...
 
     async def list_models(self) -> list[str]:
         return []
@@ -94,12 +91,10 @@ class AgentPlugin(BasePlugin):
     plugin_type = PluginType.AGENT
 
     @abc.abstractmethod
-    async def process(self, user_input: str, context: list[dict] | None = None) -> str:
-        ...
+    async def process(self, user_input: str, context: list[dict] | None = None) -> str: ...
 
     @abc.abstractmethod
-    async def process_stream(self, user_input: str, context: list[dict] | None = None) -> Any:
-        ...
+    async def process_stream(self, user_input: str, context: list[dict] | None = None) -> Any: ...
 
 
 class ToolPlugin(BasePlugin):
@@ -108,8 +103,7 @@ class ToolPlugin(BasePlugin):
     plugin_type = PluginType.TOOL
 
     @abc.abstractmethod
-    async def execute(self, params: dict) -> Any:
-        ...
+    async def execute(self, params: dict) -> Any: ...
 
     def get_tool_schema(self) -> dict:
         return {
@@ -125,8 +119,7 @@ class WorkflowPlugin(BasePlugin):
     plugin_type = PluginType.WORKFLOW
 
     @abc.abstractmethod
-    async def run(self, inputs: dict) -> Any:
-        ...
+    async def run(self, inputs: dict) -> Any: ...
 
     def get_steps(self) -> list[dict]:
         return []
@@ -138,8 +131,7 @@ class UIPlugin(BasePlugin):
     plugin_type = PluginType.UI
 
     @abc.abstractmethod
-    def get_components(self) -> list[dict]:
-        ...
+    def get_components(self) -> list[dict]: ...
 
     def get_routes(self) -> list[dict]:
         return []

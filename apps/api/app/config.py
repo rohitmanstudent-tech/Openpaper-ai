@@ -1,6 +1,10 @@
+import logging
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -8,7 +12,7 @@ class Settings(BaseSettings):
 
     APP_NAME: str = "OpenPaper AI"
     VERSION: str = "1.0.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     DATABASE_URL: str = "postgresql+asyncpg://openpaper:openpaper_secret@localhost:5432/openpaper"
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -16,6 +20,13 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "super-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def warn_default_secret(cls, v: str) -> str:
+        if v == "super-secret-key-change-in-production":
+            logger.warning("SECRET_KEY is still the default! Set a strong secret in production.")
+        return v
 
     CORS_ORIGINS: str = "http://localhost:3000"
 

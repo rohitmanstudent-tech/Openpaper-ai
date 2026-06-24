@@ -21,7 +21,7 @@ from app.models.plugin import (
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__))))
 
 
-_TOOL_SOURCE = '''
+_TOOL_SOURCE = """
 from app.core.plugin_base import ToolPlugin
 class TestToolPlugin(ToolPlugin):
     name = "test_tool"
@@ -31,9 +31,9 @@ class TestToolPlugin(ToolPlugin):
         return {"result": f"executed: {params}", "success": True}
     def get_tool_schema(self) -> dict:
         return {"name": self.name, "description": self.description, "parameters": {"type": "object", "properties": {"input": {"type": "string"}}}}
-'''
+"""
 
-_AGENT_SOURCE = '''
+_AGENT_SOURCE = """
 from app.core.plugin_base import AgentPlugin
 class TestAgentPlugin(AgentPlugin):
     name = "test_agent"
@@ -43,9 +43,9 @@ class TestAgentPlugin(AgentPlugin):
         return f"test agent processed: {user_input}"
     async def process_stream(self, user_input: str, context: list | None = None):
         yield f"test agent stream: {user_input}"
-'''
+"""
 
-_WORKFLOW_SOURCE = '''
+_WORKFLOW_SOURCE = """
 from app.core.plugin_base import WorkflowPlugin
 class TestWorkflowPlugin(WorkflowPlugin):
     name = "test_workflow"
@@ -55,7 +55,7 @@ class TestWorkflowPlugin(WorkflowPlugin):
         return {"workflow_result": inputs, "steps_completed": 3}
     def get_steps(self) -> list[dict]:
         return [{"name": "step1", "action": "analyze"}, {"name": "step2", "action": "transform"}, {"name": "step3", "action": "output"}]
-'''
+"""
 
 
 def _create_test_plugin(base_dir: str, name: str, ptype: str, source: str = "") -> str:
@@ -88,6 +88,7 @@ def plugin_dir():
     _create_test_plugin(tmp, "test_workflow", "workflow", _WORKFLOW_SOURCE)
     yield tmp
     import shutil
+
     shutil.rmtree(tmp, ignore_errors=True)
 
 
@@ -117,7 +118,7 @@ class TestPluginSandbox:
 
     def test_sanitize_path_allowed(self, plugin_dir):
         sandbox = PluginSandbox("test", [])
-        path = sandbox.sanitize_path(os.path.join(plugin_dir, "test", "file.txt"))
+        path = sandbox.sanitize_path(os.path.join(os.getcwd(), "plugins", "test", "file.txt"))
         assert "test" in path
 
     def test_sanitize_path_escape(self):
@@ -207,6 +208,7 @@ class TestPluginBaseClasses:
         plugin = registry.get_plugin("test_tool")
         assert plugin is not None
         import asyncio
+
         result = asyncio.run(plugin.execute({"input": "hello"}))
         assert result["success"] is True
 
@@ -222,6 +224,7 @@ class TestPluginBaseClasses:
         plugin = registry.get_plugin("test_agent")
         assert plugin is not None
         import asyncio
+
         result = asyncio.run(plugin.process("hello"))
         assert "test agent" in result
 
@@ -230,6 +233,7 @@ class TestPluginBaseClasses:
         plugin = registry.get_plugin("test_workflow")
         assert plugin is not None
         import asyncio
+
         result = asyncio.run(plugin.run({"data": "test"}))
         assert result["steps_completed"] == 3
 
@@ -244,7 +248,10 @@ class TestPluginBaseClasses:
 class TestPluginManifest:
     def test_manifest_creation(self):
         manifest = PluginManifest(
-            name="test", version="1.0.0", description="test plugin", plugin_type=PluginType.TOOL,
+            name="test",
+            version="1.0.0",
+            description="test plugin",
+            plugin_type=PluginType.TOOL,
         )
         assert manifest.name == "test"
         assert manifest.plugin_type == PluginType.TOOL
@@ -252,8 +259,12 @@ class TestPluginManifest:
 
     def test_manifest_with_all_fields(self):
         manifest = PluginManifest(
-            name="full", version="2.0.0", description="full plugin", author="me",
-            plugin_type=PluginType.PROVIDER, entrypoint="main.py",
+            name="full",
+            version="2.0.0",
+            description="full plugin",
+            author="me",
+            plugin_type=PluginType.PROVIDER,
+            entrypoint="main.py",
             dependencies=["httpx>=0.27"],
             permissions=[PluginPermission.MEMORY_READ, PluginPermission.BUS_PUBLISH],
             hooks=["on_load", "on_task_created"],
@@ -265,15 +276,23 @@ class TestPluginManifest:
 
     def test_plugin_create_schema(self):
         create = PluginCreate(
-            name="new_plugin", description="new", plugin_type=PluginType.WORKFLOW, source="print('hello')",
+            name="new_plugin",
+            description="new",
+            plugin_type=PluginType.WORKFLOW,
+            source="print('hello')",
         )
         assert create.name == "new_plugin"
         assert create.source == "print('hello')"
 
     def test_plugin_response_schema(self):
         resp = PluginResponse(
-            id="p-1", name="test", version="1.0.0", description="test", author="",
-            plugin_type=PluginType.TOOL, status=PluginStatus.ENABLED,
+            id="p-1",
+            name="test",
+            version="1.0.0",
+            description="test",
+            author="",
+            plugin_type=PluginType.TOOL,
+            status=PluginStatus.ENABLED,
         )
         assert resp.id == "p-1"
         assert resp.status == PluginStatus.ENABLED

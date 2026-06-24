@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 # ── Constants ──────────────────────────────────────────────────────────────
 
-SHORT_TERM_TTL = 86400            # 24 hours
+SHORT_TERM_TTL = 86400  # 24 hours
 CONSOLIDATION_IMPORTANCE_MIN = 0.6
 CONSOLIDATION_AGE_SECONDS = 3600  # 1 hour
 DEFAULT_RECALL_LIMIT = 10
@@ -79,6 +79,7 @@ def set_memory_engine(engine: "MemoryEngine | None") -> None:
 
 
 # ── Memory Engine ──────────────────────────────────────────────────────────
+
 
 class MemoryEngine:
     """Core memory engine with CRUD, semantic recall, consolidation, and expiration."""

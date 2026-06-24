@@ -4,6 +4,7 @@ Revision ID: 002_refresh_tokens
 Revises: 001_initial
 Create Date: 2024-01-02 00:00:00.000000
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa

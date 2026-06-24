@@ -23,15 +23,19 @@ class OllamaProvider(BaseProvider):
             return data.get("message", {}).get("content", "")
 
     async def chat_stream(self, messages: list[dict], model: str | None = None, **kwargs) -> AsyncIterator[str]:
-        async with httpx.AsyncClient(timeout=300) as client, client.stream(
-            "POST",
-            f"{settings.OLLAMA_BASE_URL}/api/chat",
-            json={"model": model or self.default_model, "messages": messages, "stream": True},
-        ) as resp:
+        async with (
+            httpx.AsyncClient(timeout=300) as client,
+            client.stream(
+                "POST",
+                f"{settings.OLLAMA_BASE_URL}/api/chat",
+                json={"model": model or self.default_model, "messages": messages, "stream": True},
+            ) as resp,
+        ):
             resp.raise_for_status()
             async for line in resp.aiter_lines():
                 if line:
                     import json
+
                     try:
                         data = json.loads(line)
                         if content := data.get("message", {}).get("content"):

@@ -77,8 +77,7 @@ async def get_agent_analytics(
     agent_stats = {}
     for a in agents:
         agent_events = [
-            e for e in events
-            if e.get("source_agent") == a.agent_type or e.get("target_agent") == a.agent_type
+            e for e in events if e.get("source_agent") == a.agent_type or e.get("target_agent") == a.agent_type
         ]
         delegations = len([e for e in agent_events if e.get("event_type") == "agent_delegated"])
         tasks_completed = len([e for e in agent_events if e.get("event_type") == "task_completed"])
@@ -122,9 +121,7 @@ async def get_workflow_analytics(
     workflow_stats = []
 
     for wf in workflows:
-        runs_result = await db.execute(
-            select(WorkflowRun).where(WorkflowRun.workflow_id == wf.id)
-        )
+        runs_result = await db.execute(select(WorkflowRun).where(WorkflowRun.workflow_id == wf.id))
         runs = runs_result.scalars().all()
         wf_runs = len(runs)
         wf_success = sum(1 for r in runs if r.status == RunStatus.COMPLETED)
@@ -139,15 +136,17 @@ async def get_workflow_analytics(
         failed_runs += wf_failed
         total_duration += wf_duration
 
-        workflow_stats.append({
-            "id": wf.id,
-            "name": wf.name,
-            "status": wf.status,
-            "total_runs": wf_runs,
-            "successful_runs": wf_success,
-            "failed_runs": wf_failed,
-            "avg_duration": round(wf_duration / wf_runs, 2) if wf_runs > 0 else 0,
-        })
+        workflow_stats.append(
+            {
+                "id": wf.id,
+                "name": wf.name,
+                "status": wf.status,
+                "total_runs": wf_runs,
+                "successful_runs": wf_success,
+                "failed_runs": wf_failed,
+                "avg_duration": round(wf_duration / wf_runs, 2) if wf_runs > 0 else 0,
+            }
+        )
 
     return {
         "workflows": workflow_stats,
@@ -214,8 +213,7 @@ async def get_document_analytics():
         "total_chunks": total_chunks,
         "searches_performed": searches,
         "top_documents": [
-            {"id": d.get("document_id"), "title": d.get("title"), "chunk_count": d.get("chunk_count")}
-            for d in top_docs
+            {"id": d.get("document_id"), "title": d.get("title"), "chunk_count": d.get("chunk_count")} for d in top_docs
         ],
     }
 

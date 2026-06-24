@@ -21,6 +21,7 @@ class NimPlugin(ProviderPlugin):
         if self._provider is None:
             from app.config import get_settings
             from app.providers.nim import NimProvider
+
             settings = get_settings()
             self._provider = NimProvider(
                 api_key=getattr(settings, "NVIDIA_API_KEY", ""),

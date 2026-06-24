@@ -33,10 +33,14 @@ class Workflow(Base):
     edges: Mapped[dict] = mapped_column(JSON, default=dict)
     owner_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
     owner = relationship("User", backref="workflows")
-    runs = relationship("WorkflowRun", back_populates="workflow", cascade="all, delete-orphan", order_by="WorkflowRun.created_at.desc()")
+    runs = relationship(
+        "WorkflowRun", back_populates="workflow", cascade="all, delete-orphan", order_by="WorkflowRun.created_at.desc()"
+    )
 
 
 class WorkflowRun(Base):

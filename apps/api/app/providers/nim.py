@@ -163,10 +163,15 @@ class NimProvider(BaseProvider):
         }
         total_input = 0
         total_output = 0
-        async with httpx.AsyncClient(timeout=300) as client, client.stream(
-            "POST", self._url(),
-            headers=self._headers(), json=body,
-        ) as resp:
+        async with (
+            httpx.AsyncClient(timeout=300) as client,
+            client.stream(
+                "POST",
+                self._url(),
+                headers=self._headers(),
+                json=body,
+            ) as resp,
+        ):
             if resp.status_code == 401:
                 raise RuntimeError("NVIDIA NIM API key is invalid")
             if resp.status_code == 402:
@@ -193,10 +198,13 @@ class NimProvider(BaseProvider):
                 except (json.JSONDecodeError, IndexError, KeyError):
                     continue
         if total_input or total_output:
-            self._record_usage(model_name, {
-                "prompt_tokens": total_input,
-                "completion_tokens": total_output,
-            })
+            self._record_usage(
+                model_name,
+                {
+                    "prompt_tokens": total_input,
+                    "completion_tokens": total_output,
+                },
+            )
 
     async def check_health(self) -> bool:
         try:
@@ -262,16 +270,22 @@ class NimProvider(BaseProvider):
         completion_tokens = usage.get("completion_tokens", 0)
         total_tokens = usage.get("total_tokens", prompt_tokens + completion_tokens)
         cost = self.estimate_cost(model, prompt_tokens, completion_tokens)
-        self._usage.append({
-            "model": model,
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": completion_tokens,
-            "total_tokens": total_tokens,
-            "cost": cost,
-        })
+        self._usage.append(
+            {
+                "model": model,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+                "cost": cost,
+            }
+        )
         logger.debug(
             "NIM usage: model=%s prompt=%d completion=%d total=%d cost=$%.6f",
-            model, prompt_tokens, completion_tokens, total_tokens, cost,
+            model,
+            prompt_tokens,
+            completion_tokens,
+            total_tokens,
+            cost,
         )
 
     def get_usage(self) -> list[dict]:

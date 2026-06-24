@@ -39,9 +39,7 @@ class BaseAgent(ABC):
         await self._store_memory(user_input, result)
         return result
 
-    async def process_stream(
-        self, user_input: str, context: list[dict] | None = None
-    ) -> AsyncIterator[str]:
+    async def process_stream(self, user_input: str, context: list[dict] | None = None) -> AsyncIterator[str]:
         provider = get_provider(self.provider_name)
         if not provider:
             raise RuntimeError(f"Provider '{self.provider_name}' not available")

@@ -23,16 +23,29 @@ def _mock_bus():
     bus.publish = AsyncMock(return_value="event-1")
     bus.send_message = AsyncMock(return_value="msg-1")
     bus.send_task_event = AsyncMock(return_value="task-event-1")
-    bus.get_history = AsyncMock(return_value=[
-        {"event_id": "evt-1", "event_type": "message_sent", "source_agent": "ceo",
-         "target_agent": "research", "correlation_id": "cid-1", "timestamp": now_iso(),
-         "data": {"subject": "test", "body": "hello"}},
-    ])
+    bus.get_history = AsyncMock(
+        return_value=[
+            {
+                "event_id": "evt-1",
+                "event_type": "message_sent",
+                "source_agent": "ceo",
+                "target_agent": "research",
+                "correlation_id": "cid-1",
+                "timestamp": now_iso(),
+                "data": {"subject": "test", "body": "hello"},
+            },
+        ]
+    )
     bus.replay = AsyncMock(return_value=1)
-    bus.health = AsyncMock(return_value={
-        "status": "available", "mode": "memory", "events_published": 10,
-        "active_subscriptions": 2, "stored_events": 5,
-    })
+    bus.health = AsyncMock(
+        return_value={
+            "status": "available",
+            "mode": "memory",
+            "events_published": 10,
+            "active_subscriptions": 2,
+            "stored_events": 5,
+        }
+    )
     set_bus(bus)
     yield
     set_bus(None)
@@ -53,8 +66,10 @@ class TestEventBus:
     async def test_send_message(self):
         bus = get_bus()
         msg = AgentMessage(
-            from_agent="ceo", to_agent="research",
-            subject="Research request", body="Analyze market",
+            from_agent="ceo",
+            to_agent="research",
+            subject="Research request",
+            body="Analyze market",
         )
         event_id = await bus.send_message(msg)
         assert event_id == "msg-1"
@@ -62,8 +77,10 @@ class TestEventBus:
     async def test_send_task_event(self):
         bus = get_bus()
         event = TaskEvent(
-            task_id="t-1", title="Market analysis",
-            assigned_agent="research", status="pending",
+            task_id="t-1",
+            title="Market analysis",
+            assigned_agent="research",
+            status="pending",
         )
         event_id = await bus.send_task_event(event)
         assert event_id == "task-event-1"
@@ -166,9 +183,16 @@ class TestAgentCommunicationProtocol:
 class TestEventTypes:
     def test_all_event_types_defined(self):
         expected = [
-            "task_created", "task_assigned", "task_completed", "task_failed",
-            "memory_created", "workflow_started", "workflow_completed",
-            "message_sent", "agent_delegated", "agent_responded",
+            "task_created",
+            "task_assigned",
+            "task_completed",
+            "task_failed",
+            "memory_created",
+            "workflow_started",
+            "workflow_completed",
+            "message_sent",
+            "agent_delegated",
+            "agent_responded",
         ]
         actual = [e.value for e in EventType]
         for e in expected:

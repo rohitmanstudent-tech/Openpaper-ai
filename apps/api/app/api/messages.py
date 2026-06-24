@@ -23,9 +23,7 @@ async def get_message(
     if not msg:
         raise NotFoundError("Message not found")
 
-    chat_result = await db.execute(
-        select(Chat).where(Chat.id == msg.chat_id, Chat.user_id == current_user.id)
-    )
+    chat_result = await db.execute(select(Chat).where(Chat.id == msg.chat_id, Chat.user_id == current_user.id))
     if not chat_result.scalar_one_or_none():
         raise PermissionDeniedError("Access denied")
 

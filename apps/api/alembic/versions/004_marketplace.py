@@ -4,6 +4,7 @@ Revision ID: 004_marketplace
 Revises: 003_workflows
 Create Date: 2024-01-04 00:00:00.000000
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -22,9 +23,24 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("item_id", sa.String(100), nullable=False),
         sa.Column("name", sa.String(255), nullable=False),
-        sa.Column("item_type", sa.Enum("agent", "workflow", "tool", "provider", name="marketplaceitemtype"), nullable=False),
+        sa.Column(
+            "item_type", sa.Enum("agent", "workflow", "tool", "provider", name="marketplaceitemtype"), nullable=False
+        ),
         sa.Column("version", sa.String(50), nullable=False, server_default="1.0.0"),
-        sa.Column("status", sa.Enum("not_installed", "installing", "installed", "update_available", "error", "uninstalled", name="installstatus"), nullable=False, server_default="installed"),
+        sa.Column(
+            "status",
+            sa.Enum(
+                "not_installed",
+                "installing",
+                "installed",
+                "update_available",
+                "error",
+                "uninstalled",
+                name="installstatus",
+            ),
+            nullable=False,
+            server_default="installed",
+        ),
         sa.Column("author", sa.String(255), nullable=False, server_default=""),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("permissions", sa.JSON(), nullable=False, server_default="[]"),

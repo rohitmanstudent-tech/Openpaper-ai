@@ -4,6 +4,7 @@ Revision ID: 005_hub_registry
 Revises: 004_marketplace
 Create Date: 2024-01-05 00:00:00.000000
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -27,7 +28,12 @@ def upgrade() -> None:
         sa.Column("author", sa.String(255), nullable=False, server_default=""),
         sa.Column("publisher_id", sa.Integer(), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("current_version", sa.String(50), nullable=False, server_default="1.0.0"),
-        sa.Column("visibility", sa.Enum("public", "private", "organization", name="packagevisibility"), nullable=False, server_default="public"),
+        sa.Column(
+            "visibility",
+            sa.Enum("public", "private", "organization", name="packagevisibility"),
+            nullable=False,
+            server_default="public",
+        ),
         sa.Column("downloads", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("rating_sum", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("rating_count", sa.Integer(), nullable=False, server_default="0"),

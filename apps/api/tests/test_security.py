@@ -21,6 +21,7 @@ def client():
 
 # ── Encryption ─────────────────────────────────────────────────────────
 
+
 class TestEncryption:
     def setup_method(self):
         init_encryption()
@@ -39,11 +40,13 @@ class TestEncryption:
 
     def test_decrypt_invalid_ciphertext(self):
         from cryptography.fernet import InvalidToken
+
         with pytest.raises(InvalidToken):
             decrypt_value("not-valid-base64!!")
 
 
 # ── Input Sanitization ─────────────────────────────────────────────────
+
 
 class TestSanitizeString:
     def test_removes_control_characters(self):
@@ -121,6 +124,7 @@ class TestFileUploadValidation:
 
 # ── Security Headers ───────────────────────────────────────────────────
 
+
 class TestSecurityHeaders:
     @pytest.mark.asyncio
     async def test_content_type_options(self, client):
@@ -142,6 +146,7 @@ class TestSecurityHeaders:
 
 
 # ── Rate Limiter ───────────────────────────────────────────────────────
+
 
 class TestRateLimiter:
     @pytest.mark.asyncio
@@ -176,6 +181,7 @@ class TestRateLimiter:
 
 
 # ── Error Response Format ──────────────────────────────────────────────
+
 
 class TestErrorResponseFormat:
     @pytest.mark.asyncio

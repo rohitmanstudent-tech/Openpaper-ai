@@ -21,10 +21,7 @@ async def list_tasks(
 ):
     result = await db.execute(
         select(Task)
-        .where(
-            (Task.created_by == current_user.id) |
-            (Task.assigned_to == current_user.id)
-        )
+        .where((Task.created_by == current_user.id) | (Task.assigned_to == current_user.id))
         .order_by(Task.created_at.desc())
     )
     return [TaskResponse.model_validate(t) for t in result.scalars().all()]
@@ -82,6 +79,7 @@ async def update_task(
 
     if data.status == "completed":
         from datetime import datetime
+
         task.completed_at = datetime.now(UTC)
 
     await db.commit()

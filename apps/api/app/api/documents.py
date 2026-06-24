@@ -8,7 +8,7 @@ import io
 import logging
 import os
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -42,6 +42,7 @@ DOCUMENTS_INDEX = "documents"
 
 # ── Schemas ──────────────────────────────────────────────────────────
 
+
 class DocumentResponse(BaseModel):
     id: str
     filename: str
@@ -52,12 +53,14 @@ class DocumentResponse(BaseModel):
     created_at: str
     status: str
 
+
 class ChunkResponse(BaseModel):
     id: str
     document_id: str
     content: str
     chunk_index: int
     score: float | None = None
+
 
 class SearchRequest(BaseModel):
     query: str
@@ -66,11 +69,14 @@ class SearchRequest(BaseModel):
     score_threshold: float | None = 0.5
     filters: dict[str, Any] | None = None
 
+
 class SearchResult(BaseModel):
     chunk: ChunkResponse
     document: dict[str, Any] | None = None
 
+
 # ── Text Extraction ─────────────────────────────────────────────────
+
 
 def extract_text(filename: str, content: bytes) -> str:
     ext = os.path.splitext(filename)[1].lower()
@@ -87,20 +93,26 @@ def extract_text(filename: str, content: bytes) -> str:
             return content.decode("utf-8", errors="replace")
     except Exception as e:
         logger.error("Text extraction failed for %s: %s", filename, e)
-        raise HTTPException(status_code=400, detail=f"Failed to extract text: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to extract text: {e}") from e
+
 
 def _extract_pdf(content: bytes) -> str:
     from pypdf import PdfReader
+
     reader = PdfReader(io.BytesIO(content))
     return "\n\n".join(page.extract_text() or "" for page in reader.pages)
 
+
 def _extract_docx(content: bytes) -> str:
     from docx import Document
+
     doc = Document(io.BytesIO(content))
     return "\n\n".join(p.text for p in doc.paragraphs if p.text.strip())
 
+
 def _extract_xlsx(content: bytes) -> str:
     from openpyxl import load_workbook
+
     wb = load_workbook(io.BytesIO(content), read_only=True)
     texts = []
     for sheet in wb.worksheets:
@@ -113,8 +125,10 @@ def _extract_xlsx(content: bytes) -> str:
             texts.append(f"--- Sheet: {sheet.title} ---\n" + "\n".join(rows))
     return "\n\n".join(texts)
 
+
 def chunk_text(text: str, chunk_size: int = 512, overlap: int = 64) -> list[str]:
     from langchain_text_splitters import RecursiveCharacterTextSplitter
+
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=overlap,
@@ -123,15 +137,37 @@ def chunk_text(text: str, chunk_size: int = 512, overlap: int = 64) -> list[str]
     return splitter.split_text(text)
 
 
+async def _ensure_kb_collection_async():
+    from app.core.embedding import get_embedding_provider
+    from app.core.vector import get_client
+
+    client = get_client()
+    collections = client.get_collections().collections
+    names = [c.name for c in collections]
+    if KB_COLLECTION not in names:
+        emb = get_embedding_provider()
+        from qdrant_client.http import models as qmodels
+
+        client.create_collection(
+            collection_name=KB_COLLECTION,
+            vectors_config=qmodels.VectorParams(
+                size=emb.dimension,
+                distance=qmodels.Distance.COSINE,
+            ),
+        )
+
+
 def _ensure_kb_collection():
-    """Create knowledge_base collection if it doesn't exist."""
     try:
         import anyio
+
         anyio.run(_ensure_kb_collection_async)
     except Exception:
         pass
 
+
 # ── Endpoints ─────────────────────────────────────────────────────────
+
 
 @router.get("/health")
 async def health():
@@ -139,19 +175,19 @@ async def health():
 
 
 @router.get("/collections")
-async def get_collections():
+async def get_collections(current_user: User = Depends(get_current_user)):
     cols = await list_collections()
     return {"collections": cols}
 
 
 @router.post("/collections/create")
-async def create_collection_endpoint(name: str = KB_COLLECTION):
+async def create_collection_endpoint(name: str = KB_COLLECTION, current_user: User = Depends(get_current_user)):
     await recreate_collection(name)
     return {"success": True, "collection": name}
 
 
 @router.delete("/collections/{name}")
-async def remove_collection(name: str):
+async def remove_collection(name: str, current_user: User = Depends(get_current_user)):
     await delete_collection(name)
     return {"success": True, "collection": name}
 
@@ -184,6 +220,7 @@ async def upload_document(
     from qdrant_client.http import models as qmodels
 
     from app.core.vector import get_client
+
     client = get_client()
     try:
         client.get_collection(collection_name=collection_name)
@@ -203,7 +240,7 @@ async def upload_document(
         "title": title or file.filename,
         "file_type": os.path.splitext(file.filename)[1].lower(),
         "size_bytes": len(content),
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "user_id": str(current_user.id),
         "type": "chunk",
     }
@@ -226,7 +263,7 @@ async def upload_document(
         "file_type": os.path.splitext(file.filename)[1].lower(),
         "size_bytes": len(content),
         "chunk_count": len(chunks),
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "user_id": str(current_user.id),
         "status": "indexed",
         "type": "document_meta",
@@ -263,16 +300,18 @@ async def list_documents(
     docs = []
     for p in points:
         pl = p["payload"]
-        docs.append(DocumentResponse(
-            id=pl.get("document_id", p["id"]),
-            filename=pl.get("filename", ""),
-            title=pl.get("title", ""),
-            file_type=pl.get("file_type", ""),
-            size_bytes=pl.get("size_bytes", 0),
-            chunk_count=pl.get("chunk_count", 0),
-            created_at=pl.get("created_at", ""),
-            status=pl.get("status", "unknown"),
-        ))
+        docs.append(
+            DocumentResponse(
+                id=pl.get("document_id", p["id"]),
+                filename=pl.get("filename", ""),
+                title=pl.get("title", ""),
+                file_type=pl.get("file_type", ""),
+                size_bytes=pl.get("size_bytes", 0),
+                chunk_count=pl.get("chunk_count", 0),
+                created_at=pl.get("created_at", ""),
+                status=pl.get("status", "unknown"),
+            )
+        )
     return {"success": True, "documents": docs, "next_offset": next_offset, "total": len(docs)}
 
 
@@ -283,6 +322,7 @@ async def get_document(
     current_user: User = Depends(get_current_user),
 ):
     from app.core.vector import get_client
+
     client = get_client()
     points = client.retrieve(
         collection_name=collection,
@@ -350,12 +390,14 @@ async def get_document_chunks(
     chunks = []
     for p in points:
         pl = p["payload"]
-        chunks.append(ChunkResponse(
-            id=p["id"],
-            document_id=pl.get("document_id", document_id),
-            content=pl.get("content", ""),
-            chunk_index=pl.get("chunk_index", 0),
-        ))
+        chunks.append(
+            ChunkResponse(
+                id=p["id"],
+                document_id=pl.get("document_id", document_id),
+                content=pl.get("content", ""),
+                chunk_index=pl.get("chunk_index", 0),
+            )
+        )
     return {"success": True, "chunks": chunks, "next_offset": next_offset, "total": len(chunks)}
 
 

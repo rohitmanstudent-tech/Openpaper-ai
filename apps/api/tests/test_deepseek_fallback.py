@@ -62,6 +62,7 @@ class TestFallbackConfig:
 class TestFallthroughDetection:
     def test_http_500_is_fallthrough(self):
         from app.providers import _is_fallthrough_error
+
         response = MagicMock(spec=httpx.Response)
         response.status_code = 503
         error = httpx.HTTPStatusError("503", request=MagicMock(), response=response)
@@ -69,6 +70,7 @@ class TestFallthroughDetection:
 
     def test_http_400_not_fallthrough(self):
         from app.providers import _is_fallthrough_error
+
         response = MagicMock(spec=httpx.Response)
         response.status_code = 401
         error = httpx.HTTPStatusError("401", request=MagicMock(), response=response)
@@ -76,26 +78,31 @@ class TestFallthroughDetection:
 
     def test_timeout_is_fallthrough(self):
         from app.providers import _is_fallthrough_error
+
         error = httpx.TimeoutException("timeout")
         assert _is_fallthrough_error(error) is True
 
     def test_connect_error_is_fallthrough(self):
         from app.providers import _is_fallthrough_error
+
         error = httpx.ConnectError("connection refused")
         assert _is_fallthrough_error(error) is True
 
     def test_network_error_is_fallthrough(self):
         from app.providers import _is_fallthrough_error
+
         error = httpx.NetworkError("eof")
         assert _is_fallthrough_error(error) is True
 
     def test_runtime_error_service_unavailable_is_fallthrough(self):
         from app.providers import _is_fallthrough_error
+
         error = RuntimeError("service unavailable")
         assert _is_fallthrough_error(error) is True
 
     def test_runtime_error_invalid_key_not_fallthrough(self):
         from app.providers import _is_fallthrough_error
+
         error = RuntimeError("API key is invalid")
         assert _is_fallthrough_error(error) is False
 
@@ -126,7 +133,13 @@ class TestChatWithFallback:
         openai = get_provider("openai")
         deepseek.api_key = "test-key"
         with (
-            patch.object(deepseek, "chat", new=AsyncMock(side_effect=httpx.HTTPStatusError("500", request=MagicMock(), response=MagicMock(status_code=503)))),
+            patch.object(
+                deepseek,
+                "chat",
+                new=AsyncMock(
+                    side_effect=httpx.HTTPStatusError("500", request=MagicMock(), response=MagicMock(status_code=503))
+                ),
+            ),
             patch.object(openai, "chat", new=AsyncMock(return_value="openai response")),
         ):
             result = await chat_with_fallback(
@@ -144,7 +157,13 @@ class TestChatWithFallback:
         deepseek.api_key = "test-key"
         with (
             patch.object(deepseek, "chat", new=AsyncMock(side_effect=httpx.TimeoutException("timeout"))),
-            patch.object(openai, "chat", new=AsyncMock(side_effect=httpx.HTTPStatusError("503", request=MagicMock(), response=MagicMock(status_code=503)))),
+            patch.object(
+                openai,
+                "chat",
+                new=AsyncMock(
+                    side_effect=httpx.HTTPStatusError("503", request=MagicMock(), response=MagicMock(status_code=503))
+                ),
+            ),
             patch.object(openrouter, "chat", new=AsyncMock(return_value="openrouter response")),
         ):
             result = await chat_with_fallback(
@@ -161,39 +180,55 @@ class TestChatWithFallback:
         openrouter = get_provider("openrouter")
         deepseek.api_key = "test-key"
         with (
-            patch.object(deepseek, "chat", new=AsyncMock(side_effect=httpx.HTTPStatusError("503", request=MagicMock(), response=MagicMock(status_code=503)))),
+            patch.object(
+                deepseek,
+                "chat",
+                new=AsyncMock(
+                    side_effect=httpx.HTTPStatusError("503", request=MagicMock(), response=MagicMock(status_code=503))
+                ),
+            ),
             patch.object(openai, "chat", new=AsyncMock(side_effect=httpx.TimeoutException("timeout"))),
             patch.object(openrouter, "chat", new=AsyncMock(side_effect=httpx.ConnectError("refused"))),
+            pytest.raises(httpx.ConnectError),
         ):
-            with pytest.raises(httpx.ConnectError):
-                await chat_with_fallback(
-                    messages=[{"role": "user", "content": "hi"}],
-                    provider="deepseek",
-                    model="deepseek-chat",
-                )
+            await chat_with_fallback(
+                messages=[{"role": "user", "content": "hi"}],
+                provider="deepseek",
+                model="deepseek-chat",
+            )
 
     @pytest.mark.asyncio
     async def test_auth_error_does_not_fallthrough(self):
         deepseek = get_provider("deepseek")
         deepseek.api_key = "test-key"
-        with patch.object(deepseek, "chat", new=AsyncMock(side_effect=RuntimeError("API key is invalid"))):
-            with pytest.raises(RuntimeError, match="API key is invalid"):
-                await chat_with_fallback(
-                    messages=[{"role": "user", "content": "hi"}],
-                    provider="deepseek",
-                    model="deepseek-chat",
-                )
+        with (
+            patch.object(deepseek, "chat", new=AsyncMock(side_effect=RuntimeError("API key is invalid"))),
+            pytest.raises(RuntimeError, match="API key is invalid"),
+        ):
+            await chat_with_fallback(
+                messages=[{"role": "user", "content": "hi"}],
+                provider="deepseek",
+                model="deepseek-chat",
+            )
 
     @pytest.mark.asyncio
     async def test_ollama_no_fallback_raises_immediately(self):
         ollama = get_provider("ollama")
-        with patch.object(ollama, "chat", new=AsyncMock(side_effect=httpx.HTTPStatusError("503", request=MagicMock(), response=MagicMock(status_code=503)))):
-            with pytest.raises(httpx.HTTPStatusError):
-                await chat_with_fallback(
-                    messages=[{"role": "user", "content": "hi"}],
-                    provider="ollama",
-                    model="llama3.1",
-                )
+        with (
+            patch.object(
+                ollama,
+                "chat",
+                new=AsyncMock(
+                    side_effect=httpx.HTTPStatusError("503", request=MagicMock(), response=MagicMock(status_code=503))
+                ),
+            ),
+            pytest.raises(httpx.HTTPStatusError),
+        ):
+            await chat_with_fallback(
+                messages=[{"role": "user", "content": "hi"}],
+                provider="ollama",
+                model="llama3.1",
+            )
 
 
 # ── chat_stream_with_fallback ──────────────────────────────────────────
@@ -272,7 +307,8 @@ class TestChatStreamWithFallback:
         with (
             patch.object(deepseek, "chat_stream", new=fail_503),
             patch.object(openai, "chat_stream", new=fail_timeout),
-            patch.object(openrouter, "chat_stream", new=fail_connect),pytest.raises(httpx.ConnectError)
+            patch.object(openrouter, "chat_stream", new=fail_connect),
+            pytest.raises(httpx.ConnectError),
         ):
             async for _ in chat_stream_with_fallback(
                 messages=[{"role": "user", "content": "hi"}],
@@ -310,7 +346,7 @@ class TestDeepSeekPlugin:
             with open(os.path.join(provider_dir, "plugin.yaml"), "w") as f:
                 yaml.dump(manifest, f)
 
-            plugin_code = '''import logging
+            plugin_code = """import logging
 from typing import AsyncIterator
 from app.core.plugin_base import ProviderPlugin
 
@@ -337,7 +373,7 @@ class DeepSeekPlugin(ProviderPlugin):
 
     async def list_models(self):
         return ["deepseek-chat", "deepseek-reasoner"]
-'''
+"""
             with open(os.path.join(provider_dir, "plugin.py"), "w") as f:
                 f.write(plugin_code)
 
@@ -365,6 +401,7 @@ class DeepSeekPlugin(ProviderPlugin):
         plugin = registry.get_plugin("deepseek")
         assert plugin is not None
         import asyncio
+
         result = asyncio.run(plugin.chat([{"role": "user", "content": "hi"}]))
         assert result == "plugin response"
 
@@ -375,6 +412,7 @@ class DeepSeekPlugin(ProviderPlugin):
         plugin = registry.get_plugin("deepseek")
         assert plugin is not None
         import asyncio
+
         result = asyncio.run(plugin.check_health())
         assert result is True
 
@@ -385,6 +423,7 @@ class DeepSeekPlugin(ProviderPlugin):
         plugin = registry.get_plugin("deepseek")
         assert plugin is not None
         import asyncio
+
         models = asyncio.run(plugin.list_models())
         assert "deepseek-chat" in models
         assert "deepseek-reasoner" in models
@@ -405,6 +444,7 @@ class DeepSeekPlugin(ProviderPlugin):
         sandbox = registry.get_sandbox("deepseek")
         assert sandbox is not None
         from app.models.plugin import PluginPermission
+
         assert sandbox.check_permission(PluginPermission.NETWORK) is True
         assert sandbox.check_permission(PluginPermission.MEMORY_READ) is False
 

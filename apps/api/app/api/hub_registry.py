@@ -47,6 +47,7 @@ router = APIRouter(prefix="/hub", tags=["hub"])
 
 # ── Search / List ───────────────────────────────────────────────────
 
+
 @router.get("/packages", response_model=PackageSearchResponse)
 async def search_packages(
     query: str | None = Query(None, min_length=1),
@@ -110,19 +111,21 @@ async def search_packages(
 
     items = []
     for pkg in packages:
-        items.append(PackageSearchItem(
-            id=pkg.package_id,
-            name=pkg.name,
-            description=pkg.description,
-            package_type=pkg.package_type.value,
-            author=pkg.author,
-            current_version=pkg.current_version,
-            downloads=pkg.downloads,
-            average_rating=pkg.average_rating,
-            rating_count=pkg.rating_count,
-            verified_publisher=pkg.verified_publisher,
-            tags=pkg.tags or [],
-        ))
+        items.append(
+            PackageSearchItem(
+                id=pkg.package_id,
+                name=pkg.name,
+                description=pkg.description,
+                package_type=pkg.package_type.value,
+                author=pkg.author,
+                current_version=pkg.current_version,
+                downloads=pkg.downloads,
+                average_rating=pkg.average_rating,
+                rating_count=pkg.rating_count,
+                verified_publisher=pkg.verified_publisher,
+                tags=pkg.tags or [],
+            )
+        )
 
     return PackageSearchResponse(items=items, total=total, page=page, page_size=page_size)
 
@@ -133,24 +136,24 @@ async def get_package_detail(
     db: AsyncSession = Depends(get_db),
     _current_user: User = Depends(get_current_user_optional),
 ):
-    result = await db.execute(
-        select(RegistryPackage).where(RegistryPackage.package_id == package_id)
-    )
+    result = await db.execute(select(RegistryPackage).where(RegistryPackage.package_id == package_id))
     pkg = result.scalar_one_or_none()
     if not pkg:
         raise NotFoundError(f"Package '{package_id}' not found in registry")
 
     versions = []
     for v in pkg.versions:
-        versions.append(PackageVersionResponse(
-            version=v.version,
-            checksum_sha256=v.checksum_sha256,
-            signature=v.signature,
-            signature_key_id=v.signature_key_id,
-            dependencies=v.dependencies or [],
-            changelog=v.changelog,
-            published_at=v.published_at,
-        ))
+        versions.append(
+            PackageVersionResponse(
+                version=v.version,
+                checksum_sha256=v.checksum_sha256,
+                signature=v.signature,
+                signature_key_id=v.signature_key_id,
+                dependencies=v.dependencies or [],
+                changelog=v.changelog,
+                published_at=v.published_at,
+            )
+        )
 
     return PackageDetailResponse(
         id=pkg.package_id,
@@ -176,6 +179,7 @@ async def get_package_detail(
 
 # ── Publish ─────────────────────────────────────────────────────────
 
+
 @router.post("/packages", response_model=PublishResponse)
 async def publish_package(
     body: PublishRequest,
@@ -185,9 +189,7 @@ async def publish_package(
     manifest = body.manifest
     pkg_id = manifest.name.lower().replace(" ", "-")
 
-    existing = await db.execute(
-        select(RegistryPackage).where(RegistryPackage.package_id == pkg_id)
-    )
+    existing = await db.execute(select(RegistryPackage).where(RegistryPackage.package_id == pkg_id))
     existing_pkg = existing.scalar_one_or_none()
 
     if existing_pkg:
@@ -199,7 +201,7 @@ async def publish_package(
     try:
         pkg_type = PackageType(manifest.package_type)
     except ValueError:
-        raise ValidationError(f"Invalid package type: {manifest.package_type}")
+        raise ValidationError(f"Invalid package type: {manifest.package_type}") from None
 
     visibility = PackageVisibility.PUBLIC
     with contextlib.suppress(ValueError):
@@ -210,16 +212,14 @@ async def publish_package(
     sig_verified = False
     if body.signature and body.signature_key_id:
         key_result = await db.execute(
-        select(PublisherKey).where(
+            select(PublisherKey).where(
                 PublisherKey.key_id == body.signature_key_id,
                 PublisherKey.is_active,
             )
         )
         pub_key = key_result.scalar_one_or_none()
         if pub_key:
-            sig_verified = verify_signature(
-                manifest.model_dump(), body.signature, pub_key.public_key
-            )
+            sig_verified = verify_signature(manifest.model_dump(), body.signature, pub_key.public_key)
 
     pkg = RegistryPackage(
         package_id=pkg_id,
@@ -269,12 +269,12 @@ async def publish_package(
                 description=manifest.description,
                 author=manifest.author,
                 plugin_type=ptype,
-                permissions=[PluginPermission(p) for p in manifest.permissions if p in [pp.value for pp in PluginPermission]],
+                permissions=[
+                    PluginPermission(p) for p in manifest.permissions if p in [pp.value for pp in PluginPermission]
+                ],
                 dependencies=manifest.dependencies,
             )
-            registry._manifests[pkg_id] = pm
-            registry._status[pkg_id] = "loaded"
-            registry._loaded_at[pkg_id] = datetime.now(UTC).isoformat()
+            registry.register_manifest(pkg_id, pm)
             logger.info("Registered published package '%s' in plugin registry", pkg_id)
     except Exception as e:
         logger.warning("Failed to register in plugin registry: %s", e)
@@ -298,15 +298,11 @@ async def _publish_new_version(
     manifest = body.manifest
 
     if Version(manifest.version) <= Version(pkg.current_version):
-        raise ValidationError(
-            f"New version {manifest.version} must be greater than current {pkg.current_version}"
-        )
+        raise ValidationError(f"New version {manifest.version} must be greater than current {pkg.current_version}")
 
     for existing_v in pkg.versions:
         if existing_v.version == manifest.version:
-            raise ConflictError(
-                f"Version {manifest.version} already exists for '{pkg.package_id}'"
-            )
+            raise ConflictError(f"Version {manifest.version} already exists for '{pkg.package_id}'")
 
     checksum = compute_checksum(manifest.model_dump())
 
@@ -320,9 +316,7 @@ async def _publish_new_version(
         )
         pub_key = key_result.scalar_one_or_none()
         if pub_key:
-            sig_verified = verify_signature(
-                manifest.model_dump(), body.signature, pub_key.public_key
-            )
+            sig_verified = verify_signature(manifest.model_dump(), body.signature, pub_key.public_key)
 
     version = RegistryPackageVersion(
         package_id=pkg.id,
@@ -359,29 +353,24 @@ async def _publish_new_version(
 
 # ── Unpublish ───────────────────────────────────────────────────────
 
+
 @router.delete("/packages/{package_id}", response_model=dict)
 async def unpublish_package(
     package_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(RegistryPackage).where(RegistryPackage.package_id == package_id)
-    )
+    result = await db.execute(select(RegistryPackage).where(RegistryPackage.package_id == package_id))
     pkg = result.scalar_one_or_none()
     if not pkg:
         raise NotFoundError(f"Package '{package_id}' not found")
     if pkg.publisher_id != current_user.id:
         from app.core.exceptions import PermissionDeniedError
+
         raise PermissionDeniedError("You can only unpublish your own packages")
 
     registry = get_plugin_registry()
-    if package_id in registry._manifests:
-        del registry._manifests[package_id]
-    if package_id in registry._status:
-        del registry._status[package_id]
-    if package_id in registry._loaded_at:
-        del registry._loaded_at[package_id]
+    registry.unregister_manifest(package_id)
 
     await db.delete(pkg)
     await db.commit()
@@ -390,6 +379,7 @@ async def unpublish_package(
 
 # ── Download / Resolve ──────────────────────────────────────────────
 
+
 @router.get("/packages/{package_id}/resolve", response_model=ResolveResponse)
 async def resolve_package(
     package_id: str,
@@ -397,9 +387,7 @@ async def resolve_package(
     db: AsyncSession = Depends(get_db),
     _current_user: User = Depends(get_current_user_optional),
 ):
-    result = await db.execute(
-        select(RegistryPackage).where(RegistryPackage.package_id == package_id)
-    )
+    result = await db.execute(select(RegistryPackage).where(RegistryPackage.package_id == package_id))
     pkg = result.scalar_one_or_none()
     if not pkg:
         raise NotFoundError(f"Package '{package_id}' not found")
@@ -409,9 +397,7 @@ async def resolve_package(
 
     resolved = find_best_match(available_versions, target_version)
     if not resolved:
-        raise NotFoundError(
-            f"No version of '{package_id}' satisfies constraint '{target_version}'"
-        )
+        raise NotFoundError(f"No version of '{package_id}' satisfies constraint '{target_version}'")
 
     version_obj = None
     for v in pkg.versions:
@@ -427,30 +413,29 @@ async def resolve_package(
 
     graph = DependencyGraph()
     graph.add_package(
-        pkg.package_id, resolved, version_obj.dependencies or {},
-        {"name": pkg.name, "type": pkg.package_type.value}
+        pkg.package_id, resolved, version_obj.dependencies or {}, {"name": pkg.name, "type": pkg.package_type.value}
     )
 
     dep_chain: list[InstallResolution] = []
     dep_names = version_obj.dependencies or []
     for dep_id in dep_names:
-        dep_result = await db.execute(
-            select(RegistryPackage).where(RegistryPackage.package_id == dep_id)
-        )
+        dep_result = await db.execute(select(RegistryPackage).where(RegistryPackage.package_id == dep_id))
         dep_pkg = dep_result.scalar_one_or_none()
         if dep_pkg:
             dep_version = dep_pkg.current_version
             dep_manifest = {}
             if dep_pkg.versions:
                 dep_manifest = dep_pkg.versions[0].manifest or {}
-            dep_chain.append(InstallResolution(
-                package_id=dep_id,
-                name=dep_pkg.name,
-                version=dep_version,
-                manifest=dep_manifest,
-                checksum_sha256=dep_pkg.versions[0].checksum_sha256 if dep_pkg.versions else "",
-                permissions_requested=dep_manifest.get("permissions", []),
-            ))
+            dep_chain.append(
+                InstallResolution(
+                    package_id=dep_id,
+                    name=dep_pkg.name,
+                    version=dep_version,
+                    manifest=dep_manifest,
+                    checksum_sha256=dep_pkg.versions[0].checksum_sha256 if dep_pkg.versions else "",
+                    permissions_requested=dep_manifest.get("permissions", []),
+                )
+            )
 
     resolution = InstallResolution(
         package_id=pkg.package_id,
@@ -465,21 +450,25 @@ async def resolve_package(
     )
 
     lockfile = Lockfile()
-    lockfile.add_entry(LockEntry(
-        name=pkg.package_id,
-        version=target_version,
-        resolved_version=resolved,
-        dependencies=version_obj.dependencies or [],
-        checksum=version_obj.checksum_sha256,
-    ))
+    lockfile.add_entry(
+        LockEntry(
+            name=pkg.package_id,
+            version=target_version,
+            resolved_version=resolved,
+            dependencies=version_obj.dependencies or [],
+            checksum=version_obj.checksum_sha256,
+        )
+    )
     for dep in dep_chain:
-        lockfile.add_entry(LockEntry(
-            name=dep.package_id,
-            version="*",
-            resolved_version=dep.version,
-            dependencies=dep.dependencies,
-            checksum=dep.checksum_sha256,
-        ))
+        lockfile.add_entry(
+            LockEntry(
+                name=dep.package_id,
+                version="*",
+                resolved_version=dep.version,
+                dependencies=dep.dependencies,
+                checksum=dep.checksum_sha256,
+            )
+        )
 
     return ResolveResponse(
         success=True,
@@ -492,6 +481,7 @@ async def resolve_package(
 
 # ── Ratings ─────────────────────────────────────────────────────────
 
+
 @router.post("/packages/{package_id}/ratings", response_model=RatingResponse)
 async def rate_package(
     package_id: str,
@@ -499,9 +489,7 @@ async def rate_package(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(RegistryPackage).where(RegistryPackage.package_id == package_id)
-    )
+    result = await db.execute(select(RegistryPackage).where(RegistryPackage.package_id == package_id))
     pkg = result.scalar_one_or_none()
     if not pkg:
         raise NotFoundError(f"Package '{package_id}' not found")
@@ -538,6 +526,7 @@ async def rate_package(
 
 
 # ── Publisher Keys ──────────────────────────────────────────────────
+
 
 @router.post("/keys", response_model=dict)
 async def register_publisher_key(
@@ -583,6 +572,7 @@ async def revoke_publisher_key(
         raise NotFoundError(f"Key '{key_id}' not found")
     if pk.user_id != current_user.id:
         from app.core.exceptions import PermissionDeniedError
+
         raise PermissionDeniedError("You can only revoke your own keys")
 
     pk.is_active = False
@@ -592,6 +582,7 @@ async def revoke_publisher_key(
 
 
 # ── Sync: Registry ↔ Local Marketplace ─────────────────────────────
+
 
 @router.post("/sync", response_model=SyncResponse)
 async def sync_registry(
@@ -609,9 +600,7 @@ async def sync_registry(
     added = 0
     updated = 0
 
-    result = await db.execute(
-        select(RegistryPackage).where(RegistryPackage.visibility == PackageVisibility.PUBLIC)
-    )
+    result = await db.execute(select(RegistryPackage).where(RegistryPackage.visibility == PackageVisibility.PUBLIC))
     remote_packages = result.scalars().all()
 
     for rp in remote_packages:
@@ -682,9 +671,7 @@ async def get_sync_status(
     db: AsyncSession = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(RegistrySyncLog).order_by(desc(RegistrySyncLog.started_at)).limit(5)
-    )
+    result = await db.execute(select(RegistrySyncLog).order_by(desc(RegistrySyncLog.started_at)).limit(5))
     logs = result.scalars().all()
     return {
         "success": True,
@@ -706,6 +693,7 @@ async def get_sync_status(
 
 # ── Stats ───────────────────────────────────────────────────────────
 
+
 @router.get("/stats", response_model=dict)
 async def get_registry_stats(
     db: AsyncSession = Depends(get_db),
@@ -714,15 +702,10 @@ async def get_registry_stats(
     total_q = await db.execute(select(func.count()).select_from(RegistryPackage))
     total_packages = total_q.scalar() or 0
 
-    type_q = await db.execute(
-        select(RegistryPackage.package_type, func.count())
-        .group_by(RegistryPackage.package_type)
-    )
+    type_q = await db.execute(select(RegistryPackage.package_type, func.count()).group_by(RegistryPackage.package_type))
     type_breakdown = {row[0].value: row[1] for row in type_q.all()}
 
-    verified_q = await db.execute(
-        select(func.count()).where(RegistryPackage.verified_publisher)
-    )
+    verified_q = await db.execute(select(func.count()).where(RegistryPackage.verified_publisher))
     verified = verified_q.scalar() or 0
 
     return {

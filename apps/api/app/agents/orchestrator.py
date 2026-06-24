@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 
+from app.agents.base import BaseAgent
 from app.agents.buyer_finder import BuyerFinderAgent
 from app.agents.ceo import CEOAgent
 from app.agents.research import ResearchAgent

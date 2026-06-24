@@ -58,20 +58,14 @@ class PluginSandbox:
 
     def require_permission(self, permission: PluginPermission) -> None:
         if not self.check_permission(permission):
-            raise PermissionError(
-                f"Plugin '{self.plugin_id}' lacks required permission: {permission.value}"
-            )
+            raise PermissionError(f"Plugin '{self.plugin_id}' lacks required permission: {permission.value}")
 
     def sanitize_path(self, path: str) -> str:
         resolved = os.path.abspath(os.path.normpath(path))
         expected = os.path.abspath(os.path.join("plugins", self.plugin_id))
-        if expected.startswith(resolved):
+        if resolved.startswith(expected):
             return resolved
-        if not resolved.startswith(expected) and "test" not in resolved:
-            raise PermissionError(
-                f"Plugin '{self.plugin_id}' attempted path escape: {path}"
-            )
-        return resolved
+        raise PermissionError(f"Plugin '{self.plugin_id}' attempted path escape: {path}")
 
 
 class PluginRegistry:
@@ -151,6 +145,12 @@ class PluginRegistry:
 
     def load_from_source(self, name: str, source_code: str, manifest: PluginManifest) -> PluginResponse:
         """Dynamically load a plugin from source code string."""
+        if "__import__" in source_code or "eval(" in source_code or "exec(" in source_code:
+            raise ValidationError(f"Plugin '{name}' source contains forbidden patterns")
+
+        if not any(cls in source_code for cls in ("BasePlugin", "BaseProvider")):
+            raise ValidationError(f"Plugin '{name}' source must subclass BasePlugin or BaseProvider")
+
         plugin_dir = os.path.join(self.base_dir, PLUGIN_DIRS[manifest.plugin_type].replace("plugins/", ""), name)
         os.makedirs(plugin_dir, exist_ok=True)
         entry_path = os.path.join(plugin_dir, manifest.entrypoint or "plugin.py")
@@ -169,6 +169,7 @@ class PluginRegistry:
         plugin = self._plugins[plugin_id]
         try:
             import asyncio
+
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 loop.create_task(plugin.on_unload())
@@ -207,6 +208,7 @@ class PluginRegistry:
             plugin_dir = os.path.join(self.base_dir, rel_dir, plugin_id)
             if os.path.isdir(plugin_dir):
                 import shutil
+
                 shutil.rmtree(plugin_dir, ignore_errors=True)
         self._manifests.pop(plugin_id, None)
         self._status.pop(plugin_id, None)
@@ -240,9 +242,26 @@ class PluginRegistry:
         results.sort(key=lambda r: r.name)
         return results
 
+    def register_manifest(self, plugin_id: str, manifest: PluginManifest) -> None:
+        """Register a plugin manifest without loading the plugin code.
+        Used by marketplace and hub to track installed packages.
+        """
+        self._manifests[plugin_id] = manifest
+        self._status[plugin_id] = PluginStatus.LOADED
+        self._loaded_at[plugin_id] = now_iso()
+
+    def unregister_manifest(self, plugin_id: str) -> None:
+        """Remove a plugin manifest from the registry.
+        Used by marketplace and hub during uninstall.
+        """
+        self._manifests.pop(plugin_id, None)
+        self._status.pop(plugin_id, None)
+        self._loaded_at.pop(plugin_id, None)
+
     def get_by_type(self, plugin_type: PluginType) -> list[BasePlugin]:
         return [
-            p for pid, p in self._plugins.items()
+            p
+            for pid, p in self._plugins.items()
             if self._manifests.get(pid) and self._manifests[pid].plugin_type == plugin_type
         ]
 
@@ -309,7 +328,7 @@ class PluginRegistry:
             try:
                 importlib.import_module(pkg_name.replace("-", "_"))
             except ImportError:
-                raise ValidationError(f"Missing dependency '{pkg_name}' for plugin '{manifest.name}'")
+                raise ValidationError(f"Missing dependency '{pkg_name}' for plugin '{manifest.name}'") from None
 
     def _validate_hooks(self, manifest: PluginManifest) -> None:
         for hook in manifest.hooks:
@@ -329,9 +348,7 @@ class PluginRegistry:
         entry_path = os.path.join(plugin_dir, manifest.entrypoint or "plugin.py")
 
         if os.path.isfile(entry_path):
-            spec = importlib.util.spec_from_file_location(
-                f"plugin_{manifest.name}", entry_path
-            )
+            spec = importlib.util.spec_from_file_location(f"plugin_{manifest.name}", entry_path)
             if spec and spec.loader:
                 mod = importlib.util.module_from_spec(spec)
                 sys.modules[f"plugin_{manifest.name}"] = mod
@@ -354,9 +371,7 @@ class PluginRegistry:
         instance.description = manifest.description
         return instance
 
-    def _make_response(
-        self, pid: str, manifest: PluginManifest, status: PluginStatus
-    ) -> PluginResponse:
+    def _make_response(self, pid: str, manifest: PluginManifest, status: PluginStatus) -> PluginResponse:
         return PluginResponse(
             id=pid,
             name=manifest.name,

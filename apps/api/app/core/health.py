@@ -69,6 +69,7 @@ async def liveness() -> dict[str, Any]:
 
 async def check_vector_store() -> dict[str, Any]:
     from app.core.vector import vector_store_health
+
     result = await vector_store_health()
     if result["status"] == "available":
         return {"status": "healthy", "message": f"Qdrant reachable ({len(result['collections'])} collections)"}

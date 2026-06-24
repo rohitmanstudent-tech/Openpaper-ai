@@ -11,47 +11,106 @@ from app.models.memory import MemoryType
 @pytest.fixture(autouse=True)
 def _mock_engine():
     engine = MemoryEngine()
-    engine.create = AsyncMock(return_value={
-        "id": "mem-1", "agent_id": "test-agent", "memory_type": "short_term",
-        "content": "test content", "importance_score": 0.5, "score": 0.0,
-        "namespace": "default", "user_id": "", "summary": "test content",
-        "metadata": {}, "created_at": "2024-01-01T00:00:00+00:00",
-        "expires_at": None, "last_accessed_at": "2024-01-01T00:00:00+00:00",
-        "access_count": 0, "consolidated": False,
-    })
-    engine.get = AsyncMock(return_value={
-        "id": "mem-1", "agent_id": "test-agent", "memory_type": "short_term",
-        "content": "test content", "importance_score": 0.5, "score": 0.0,
-        "namespace": "default", "user_id": "", "summary": "test content",
-        "metadata": {}, "created_at": "2024-01-01T00:00:00+00:00",
-        "expires_at": None, "last_accessed_at": "2024-01-01T00:00:00+00:00",
-        "access_count": 1, "consolidated": False,
-    })
-    engine.update = AsyncMock(return_value={
-        "id": "mem-1", "agent_id": "test-agent", "memory_type": "long_term",
-        "content": "updated content", "importance_score": 0.8, "score": 0.0,
-        "namespace": "default", "user_id": "", "summary": "updated content",
-        "metadata": {"key": "val"}, "created_at": "2024-01-01T00:00:00+00:00",
-        "expires_at": None, "last_accessed_at": "2024-01-01T00:00:00+00:00",
-        "access_count": 1, "consolidated": False,
-    })
+    engine.create = AsyncMock(
+        return_value={
+            "id": "mem-1",
+            "agent_id": "test-agent",
+            "memory_type": "short_term",
+            "content": "test content",
+            "importance_score": 0.5,
+            "score": 0.0,
+            "namespace": "default",
+            "user_id": "",
+            "summary": "test content",
+            "metadata": {},
+            "created_at": "2024-01-01T00:00:00+00:00",
+            "expires_at": None,
+            "last_accessed_at": "2024-01-01T00:00:00+00:00",
+            "access_count": 0,
+            "consolidated": False,
+        }
+    )
+    engine.get = AsyncMock(
+        return_value={
+            "id": "mem-1",
+            "agent_id": "test-agent",
+            "memory_type": "short_term",
+            "content": "test content",
+            "importance_score": 0.5,
+            "score": 0.0,
+            "namespace": "default",
+            "user_id": "",
+            "summary": "test content",
+            "metadata": {},
+            "created_at": "2024-01-01T00:00:00+00:00",
+            "expires_at": None,
+            "last_accessed_at": "2024-01-01T00:00:00+00:00",
+            "access_count": 1,
+            "consolidated": False,
+        }
+    )
+    engine.update = AsyncMock(
+        return_value={
+            "id": "mem-1",
+            "agent_id": "test-agent",
+            "memory_type": "long_term",
+            "content": "updated content",
+            "importance_score": 0.8,
+            "score": 0.0,
+            "namespace": "default",
+            "user_id": "",
+            "summary": "updated content",
+            "metadata": {"key": "val"},
+            "created_at": "2024-01-01T00:00:00+00:00",
+            "expires_at": None,
+            "last_accessed_at": "2024-01-01T00:00:00+00:00",
+            "access_count": 1,
+            "consolidated": False,
+        }
+    )
     engine.delete = AsyncMock(return_value=True)
-    engine.recall = AsyncMock(return_value=[
-        {"id": "mem-1", "agent_id": "test-agent", "memory_type": "short_term",
-         "content": "relevant memory", "importance_score": 0.7, "score": 0.85,
-         "namespace": "default", "user_id": "", "summary": "relevant memory",
-         "metadata": {}, "created_at": "2024-01-01T00:00:00+00:00",
-         "expires_at": None, "last_accessed_at": "2024-01-01T00:00:00+00:00",
-         "access_count": 0, "consolidated": False},
-    ])
-    engine.search = AsyncMock(return_value=[
-        {"id": "mem-1", "agent_id": "test-agent", "memory_type": "short_term",
-         "content": "found memory", "importance_score": 0.6, "score": 0.75,
-         "namespace": "default", "user_id": "", "summary": "found memory",
-         "metadata": {}, "created_at": "2024-01-01T00:00:00+00:00",
-         "expires_at": None, "last_accessed_at": "2024-01-01T00:00:00+00:00",
-         "access_count": 0, "consolidated": False},
-    ])
+    engine.recall = AsyncMock(
+        return_value=[
+            {
+                "id": "mem-1",
+                "agent_id": "test-agent",
+                "memory_type": "short_term",
+                "content": "relevant memory",
+                "importance_score": 0.7,
+                "score": 0.85,
+                "namespace": "default",
+                "user_id": "",
+                "summary": "relevant memory",
+                "metadata": {},
+                "created_at": "2024-01-01T00:00:00+00:00",
+                "expires_at": None,
+                "last_accessed_at": "2024-01-01T00:00:00+00:00",
+                "access_count": 0,
+                "consolidated": False,
+            },
+        ]
+    )
+    engine.search = AsyncMock(
+        return_value=[
+            {
+                "id": "mem-1",
+                "agent_id": "test-agent",
+                "memory_type": "short_term",
+                "content": "found memory",
+                "importance_score": 0.6,
+                "score": 0.75,
+                "namespace": "default",
+                "user_id": "",
+                "summary": "found memory",
+                "metadata": {},
+                "created_at": "2024-01-01T00:00:00+00:00",
+                "expires_at": None,
+                "last_accessed_at": "2024-01-01T00:00:00+00:00",
+                "access_count": 0,
+                "consolidated": False,
+            },
+        ]
+    )
     engine.consolidate = AsyncMock(return_value=5)
     engine.expire = AsyncMock(return_value=3)
     engine.count = AsyncMock(return_value=10)

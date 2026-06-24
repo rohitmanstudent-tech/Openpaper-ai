@@ -26,9 +26,7 @@ router = APIRouter()
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
     sanitized_email = sanitize_string(data.email, 255)
 
-    existing = await db.execute(
-        select(User).where((User.email == sanitized_email) | (User.username == data.username))
-    )
+    existing = await db.execute(select(User).where((User.email == sanitized_email) | (User.username == data.username)))
     if existing.scalar_one_or_none():
         raise ConflictError("Email or username already exists")
 

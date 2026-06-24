@@ -26,16 +26,20 @@ class OpenAIProvider(BaseProvider):
             return data["choices"][0]["message"]["content"]
 
     async def chat_stream(self, messages: list[dict], model: str | None = None, **kwargs) -> AsyncIterator[str]:
-        async with httpx.AsyncClient(timeout=300) as client, client.stream(
-            "POST",
-            f"{self.base_url}/chat/completions",
-            headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
-            json={"model": model or self.default_model, "messages": messages, "stream": True, **kwargs},
-        ) as resp:
+        async with (
+            httpx.AsyncClient(timeout=300) as client,
+            client.stream(
+                "POST",
+                f"{self.base_url}/chat/completions",
+                headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+                json={"model": model or self.default_model, "messages": messages, "stream": True, **kwargs},
+            ) as resp,
+        ):
             resp.raise_for_status()
             async for line in resp.aiter_lines():
                 if line.startswith("data: ") and line != "data: [DONE]\r":
                     import json
+
                     try:
                         chunk = json.loads(line[6:])
                         if delta := chunk["choices"][0].get("delta", {}).get("content"):

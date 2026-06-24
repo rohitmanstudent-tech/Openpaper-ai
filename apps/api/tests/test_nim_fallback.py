@@ -66,26 +66,50 @@ class TestNimUsageTracking:
 class TestNimConstructorOverrides:
     @patch("app.providers.nim.NimProvider.gpu_info", new_callable=PropertyMock)
     def test_overrides_api_key(self, mock_gpu):
-        mock_gpu.return_value = {"available": False, "gpu_name": "", "is_rtx": False, "cuda_version": "", "vram_gb": 0.0}
+        mock_gpu.return_value = {
+            "available": False,
+            "gpu_name": "",
+            "is_rtx": False,
+            "cuda_version": "",
+            "vram_gb": 0.0,
+        }
         p = NimProvider(api_key="custom-key")
         assert p.api_key == "custom-key"
 
     @patch("app.providers.nim.NimProvider.gpu_info", new_callable=PropertyMock)
     def test_overrides_base_url(self, mock_gpu):
-        mock_gpu.return_value = {"available": False, "gpu_name": "", "is_rtx": False, "cuda_version": "", "vram_gb": 0.0}
+        mock_gpu.return_value = {
+            "available": False,
+            "gpu_name": "",
+            "is_rtx": False,
+            "cuda_version": "",
+            "vram_gb": 0.0,
+        }
         p = NimProvider(base_url="http://custom:8080")
         assert p.base_url == "http://custom:8080"
 
     @patch("app.providers.nim.NimProvider.gpu_info", new_callable=PropertyMock)
     def test_overrides_both(self, mock_gpu):
-        mock_gpu.return_value = {"available": True, "gpu_name": "NVIDIA RTX 4090", "is_rtx": True, "cuda_version": "8.9", "vram_gb": 24.0}
+        mock_gpu.return_value = {
+            "available": True,
+            "gpu_name": "NVIDIA RTX 4090",
+            "is_rtx": True,
+            "cuda_version": "8.9",
+            "vram_gb": 24.0,
+        }
         p = NimProvider(api_key="k", base_url="http://k:8080")
         assert p.api_key == "k"
         assert p.base_url == "http://k:8080"
 
     @patch("app.providers.nim.NimProvider.gpu_info", new_callable=PropertyMock)
     def test_api_key_triggers_cloud_without_gpu(self, mock_gpu):
-        mock_gpu.return_value = {"available": False, "gpu_name": "", "is_rtx": False, "cuda_version": "", "vram_gb": 0.0}
+        mock_gpu.return_value = {
+            "available": False,
+            "gpu_name": "",
+            "is_rtx": False,
+            "cuda_version": "",
+            "vram_gb": 0.0,
+        }
         p = NimProvider(api_key="cloud-key")
         assert p.api_key == "cloud-key"
         assert p._using_cloud is True
@@ -93,7 +117,13 @@ class TestNimConstructorOverrides:
 
     @patch("app.providers.nim.NimProvider.gpu_info", new_callable=PropertyMock)
     def test_name_and_default_model(self, mock_gpu):
-        mock_gpu.return_value = {"available": False, "gpu_name": "", "is_rtx": False, "cuda_version": "", "vram_gb": 0.0}
+        mock_gpu.return_value = {
+            "available": False,
+            "gpu_name": "",
+            "is_rtx": False,
+            "cuda_version": "",
+            "vram_gb": 0.0,
+        }
         p = NimProvider()
         assert p.name == "nim"
         assert p.default_model == "meta/llama-3.1-8b-instruct"
@@ -109,34 +139,48 @@ class TestNimFallback:
 
     def test_nim_fallback_chain_used_on_failure(self):
         from app.providers import chat_with_fallback
+
         register_providers()
         nim = get_provider("nim")
         openai = get_provider("openai")
         nim.api_key = "test-key"
         with (
-            patch.object(nim, "chat", new=AsyncMock(side_effect=httpx.HTTPStatusError("503", request=MagicMock(), response=MagicMock(status_code=503)))),
+            patch.object(
+                nim,
+                "chat",
+                new=AsyncMock(
+                    side_effect=httpx.HTTPStatusError("503", request=MagicMock(), response=MagicMock(status_code=503))
+                ),
+            ),
             patch.object(openai, "chat", new=AsyncMock(return_value="openai fallback")),
         ):
             import asyncio
-            result = asyncio.run(chat_with_fallback(
-                messages=[{"role": "user", "content": "hi"}],
-                provider="nim",
-                model="meta/llama-3.1-8b-instruct",
-            ))
+
+            result = asyncio.run(
+                chat_with_fallback(
+                    messages=[{"role": "user", "content": "hi"}],
+                    provider="nim",
+                    model="meta/llama-3.1-8b-instruct",
+                )
+            )
             assert result == "openai fallback"
 
     def test_nim_uses_chat_with_fallback(self):
         from app.providers import chat_with_fallback
+
         register_providers()
         nim = get_provider("nim")
         nim.api_key = ""
         with patch.object(nim, "chat", new=AsyncMock(return_value="nim response")):
             import asyncio
-            result = asyncio.run(chat_with_fallback(
-                messages=[{"role": "user", "content": "hi"}],
-                provider="nim",
-                model="meta/llama-3.1-8b-instruct",
-            ))
+
+            result = asyncio.run(
+                chat_with_fallback(
+                    messages=[{"role": "user", "content": "hi"}],
+                    provider="nim",
+                    model="meta/llama-3.1-8b-instruct",
+                )
+            )
             assert result == "nim response"
 
 
@@ -205,6 +249,7 @@ class TestNimProviderManager:
 
     def test_list_models_for(self):
         import asyncio
+
         models = asyncio.run(self.mgr.list_models_for("nim"))
         assert isinstance(models, list)
 
@@ -249,7 +294,7 @@ class TestNimPlugin:
             with open(os.path.join(provider_dir, "plugin.yaml"), "w") as f:
                 yaml.dump(manifest, f)
 
-            plugin_code = '''import logging
+            plugin_code = """import logging
 from typing import AsyncIterator
 from app.core.plugin_base import ProviderPlugin
 
@@ -276,7 +321,7 @@ class NimPlugin(ProviderPlugin):
 
     async def list_models(self):
         return ["meta/llama-3.1-8b-instruct", "meta/llama-3.1-70b-instruct"]
-'''
+"""
             with open(os.path.join(provider_dir, "plugin.py"), "w") as f:
                 f.write(plugin_code)
 
@@ -304,6 +349,7 @@ class NimPlugin(ProviderPlugin):
         plugin = registry.get_plugin("nim")
         assert plugin is not None
         import asyncio
+
         result = asyncio.run(plugin.chat([{"role": "user", "content": "hi"}]))
         assert result == "nim plugin response"
 
@@ -314,6 +360,7 @@ class NimPlugin(ProviderPlugin):
         plugin = registry.get_plugin("nim")
         assert plugin is not None
         import asyncio
+
         result = asyncio.run(plugin.check_health())
         assert result is True
 
@@ -324,6 +371,7 @@ class NimPlugin(ProviderPlugin):
         plugin = registry.get_plugin("nim")
         assert plugin is not None
         import asyncio
+
         models = asyncio.run(plugin.list_models())
         assert "meta/llama-3.1-8b-instruct" in models
         assert "meta/llama-3.1-70b-instruct" in models
@@ -344,6 +392,7 @@ class NimPlugin(ProviderPlugin):
         sandbox = registry.get_sandbox("nim")
         assert sandbox is not None
         from app.models.plugin import PluginPermission
+
         assert sandbox.check_permission(PluginPermission.NETWORK) is True
 
     def test_unload_nim_plugin(self, plugin_dir):
@@ -360,9 +409,12 @@ class NimPlugin(ProviderPlugin):
         registry.discover_and_load()
         plugin = registry.get_plugin("nim")
         import asyncio
+
         chunks = []
+
         async def collect():
             async for chunk in plugin.chat_stream([{"role": "user", "content": "hi"}]):
                 chunks.append(chunk)
+
         asyncio.run(collect())
         assert "".join(chunks) == "chunk1 chunk2"

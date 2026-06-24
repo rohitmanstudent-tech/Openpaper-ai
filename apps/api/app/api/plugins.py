@@ -55,6 +55,7 @@ async def get_plugin(plugin_id: str, current_user: User = Depends(get_current_us
 @router.post("/install")
 async def install_plugin(body: PluginCreate, current_user: User = Depends(get_current_user)):
     from app.models.plugin import PluginManifest
+
     registry = get_plugin_registry()
     manifest = PluginManifest(
         name=body.name,

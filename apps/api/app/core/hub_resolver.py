@@ -40,7 +40,10 @@ class Version:
 
     def __eq__(self, other: "Version") -> bool:
         return (self.major, self.minor, self.patch, self.prerelease) == (
-            other.major, other.minor, other.patch, other.prerelease
+            other.major,
+            other.minor,
+            other.patch,
+            other.prerelease,
         )
 
     def __lt__(self, other: "Version") -> bool:
@@ -79,25 +82,17 @@ def satisfies(version_str: str, constraint_str: str) -> bool:
     op, target_str = parse_constraint(constraint_str)
     target = Version(target_str)
 
-    if op == "==":
-        return version == target
-    elif op == "!=":
-        return version != target
-    elif op == ">":
-        return version > target
-    elif op == ">=":
-        return version >= target
-    elif op == "<":
-        return version < target
-    elif op == "<=":
-        return version <= target
-    elif op == "^":
-        return (version.major == target.major and version >= target)
-    elif op == "~=":
-        return (version.major == target.major and
-                version.minor == target.minor and
-                version >= target)
-    return False
+    ops = {
+        "==": lambda v, t: v == t,
+        "!=": lambda v, t: v != t,
+        ">": lambda v, t: v > t,
+        ">=": lambda v, t: v >= t,
+        "<": lambda v, t: v < t,
+        "<=": lambda v, t: v <= t,
+        "^": lambda v, t: v.major == t.major and v >= t,
+        "~=": lambda v, t: v.major == t.major and v.minor == t.minor and v >= t,
+    }
+    return ops.get(op, lambda *_: False)(version, target)
 
 
 def find_best_match(available_versions: list[str], constraint_str: str) -> str | None:
@@ -120,21 +115,21 @@ class DependencyGraph:
             self._metadata[name] = metadata
 
     def _has_cycle(self) -> bool:
-        WHITE, GRAY, BLACK = 0, 1, 2
-        color = {n: WHITE for n in self._nodes}
+        white, gray, black = 0, 1, 2
+        color = {n: white for n in self._nodes}
 
         def dfs(node: str) -> bool:
-            color[node] = GRAY
+            color[node] = gray
             for dep in self._nodes.get(node, set()):
                 if dep in color:
-                    if color[dep] == GRAY:
+                    if color[dep] == gray:
                         return True
-                    if color[dep] == WHITE and dfs(dep):
+                    if color[dep] == white and dfs(dep):
                         return True
-            color[node] = BLACK
+            color[node] = black
             return False
 
-        return any(color[node] == WHITE and dfs(node) for node in list(self._nodes.keys()))
+        return any(color[node] == white and dfs(node) for node in list(self._nodes.keys()))
 
     def topological_sort(self) -> list[str]:
         if self._has_cycle():
@@ -161,8 +156,7 @@ class DependencyGraph:
 
 
 class LockEntry:
-    def __init__(self, name: str, version: str, resolved_version: str,
-                 dependencies: list[str], checksum: str = ""):
+    def __init__(self, name: str, version: str, resolved_version: str, dependencies: list[str], checksum: str = ""):
         self.name = name
         self.version = version
         self.resolved_version = resolved_version
@@ -198,11 +192,13 @@ class Lockfile:
         data = json.loads(json_str)
         lf = cls()
         for _name, entry_data in data.get("packages", {}).items():
-            lf.add_entry(LockEntry(
-                name=entry_data["name"],
-                version=entry_data["version"],
-                resolved_version=entry_data["resolved"],
-                dependencies=entry_data.get("dependencies", []),
-                checksum=entry_data.get("checksum", ""),
-            ))
+            lf.add_entry(
+                LockEntry(
+                    name=entry_data["name"],
+                    version=entry_data["version"],
+                    resolved_version=entry_data["resolved"],
+                    dependencies=entry_data.get("dependencies", []),
+                    checksum=entry_data.get("checksum", ""),
+                )
+            )
         return lf

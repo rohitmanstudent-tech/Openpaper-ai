@@ -1,5 +1,7 @@
 """Agent Communication Bus API routes."""
 
+import uuid
+
 from fastapi import APIRouter, Depends, Query
 
 from app.core.event_bus import build_agent_message, get_bus, is_valid_direction
@@ -217,6 +219,7 @@ async def publish_event(
     current_user: User = Depends(get_current_user),
 ):
     import json
+
     bus = get_bus()
     try:
         payload_data = json.loads(data)
@@ -229,6 +232,3 @@ async def publish_event(
         target_agent=target_agent,
     )
     return {"success": True, "event_id": event_id}
-
-
-import uuid
