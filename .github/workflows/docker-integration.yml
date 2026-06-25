@@ -53,8 +53,22 @@ jobs:
         run: docker compose -f docker-compose.ci.yml config > /dev/null
 
       - name: Start services
+        shell: bash
         run: |
+          set +e
           docker compose -f docker-compose.ci.yml up -d
+          EXIT_CODE=$?
+          set -e
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "=== docker compose up -d FAILED with exit code $EXIT_CODE ==="
+            echo "=== Checking if images exist ==="
+            docker images --filter=reference='openpaper-*' --format='{{.Repository}}:{{.Tag}}'
+            echo "=== Compose config ==="
+            docker compose -f docker-compose.ci.yml config 2>&1 || true
+            echo "=== Docker compose ps (before) ==="
+            docker compose -f docker-compose.ci.yml ps --all 2>&1 || true
+            exit $EXIT_CODE
+          fi
           echo "Waiting for services to be healthy..."
 
       - name: Wait for API health
