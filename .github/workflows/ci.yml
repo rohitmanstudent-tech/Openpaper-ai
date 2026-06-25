@@ -156,5 +156,5 @@ jobs:
           exit-code: 1
           severity: CRITICAL,HIGH
           scanners: vuln
-          skip-dirs: "node_modules,.venv,__pycache__,.git"
-          skip-files: "package-lock.json,yarn.lock"
+          skip-dirs: "node_modules,.venv,__pycache__,.git,apps/web/node_modules"
+          skip-files: "apps/web/package-lock.json"
