@@ -15,7 +15,6 @@ env:
   SECRET_KEY: ci-test-secret-key-do-not-use-in-production
   ENCRYPTION_KEY: 7ddxtizGdsHOWeI871nHOroUWANwVij5VN2NqkiaokM=
   POSTGRES_PASSWORD: openpaper_secret
-  COMPOSE_FILE: docker-compose.yml
 
 jobs:
   docker-integration:
@@ -48,6 +47,17 @@ jobs:
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Pre-pull service images
+        shell: bash
+        run: |
+          set +e
+          docker pull postgres:16-alpine
+          docker pull redis:7-alpine
+          docker pull qdrant/qdrant:latest
+          set -e
+          echo "=== Verify local images ==="
+          docker images --filter=reference='openpaper-*' --format='{{.Repository}}:{{.Tag}}'
 
       - name: Configure docker-compose for CI
         run: docker compose -f docker-compose.ci.yml config > /dev/null
