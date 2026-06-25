@@ -65,7 +65,7 @@ jobs:
             type=sha
 
       - name: Build & push API
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: apps/api
           push: true
@@ -75,7 +75,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & push Web
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: apps/web/Dockerfile
