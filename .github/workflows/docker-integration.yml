@@ -78,8 +78,8 @@ jobs:
           echo "=== V1 Health Live ==="
           curl -s http://localhost:8000/api/v1/health/live | python -m json.tool
           echo ""
-          echo "=== V1 Health Check ==="
-          curl -s http://localhost:8000/api/v1/health/live | python -m json.tool
+          echo "=== Legacy Health ==="
+          curl -s http://localhost:8000/api/health | python -m json.tool
 
       - name: Verify API ready endpoint
         run: |
@@ -129,6 +129,9 @@ jobs:
           echo ""
           echo "=== Redis Logs ==="
           docker compose -f docker-compose.ci.yml logs redis --tail=10
+          echo ""
+          echo "=== Qdrant Logs ==="
+          docker compose -f docker-compose.ci.yml logs qdrant --tail=20
 
       - name: Cleanup
         if: always()
