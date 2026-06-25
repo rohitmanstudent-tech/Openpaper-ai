@@ -155,5 +155,6 @@ jobs:
           format: table
           exit-code: 1
           severity: CRITICAL,HIGH
+          scanners: vuln
           skip-dirs: "node_modules,.venv,__pycache__,.git"
           skip-files: "package-lock.json,yarn.lock"
