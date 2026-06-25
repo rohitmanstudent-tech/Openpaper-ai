@@ -79,7 +79,7 @@ jobs:
       - run: alembic upgrade head
         working-directory: apps/api
         env:
-          DB_URL: postgresql+asyncpg://openpaper:openpaper_secret@localhost:5432/openpaper
+          DATABASE_URL: postgresql+asyncpg://openpaper:openpaper_secret@localhost:5432/openpaper
       - run: python -m pytest tests/ -v --cov=app --cov-report=xml
         env:
           DATABASE_URL: postgresql+asyncpg://openpaper:openpaper_secret@localhost:5432/openpaper
